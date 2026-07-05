@@ -1,0 +1,215 @@
+<UserControl x:Class="AgendamentoWpfApp.Views.AgendaView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Agenda"
+                           Style="{StaticResource SparkSectionTitleStyle}" />
+                <TextBlock Text="{Binding CountText}"
+                           Foreground="{StaticResource SparkMutedBrush}"
+                           FontSize="13"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding HeaderDateText}"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource SparkPanelBrush}"
+                    BorderBrush="{StaticResource SparkLineBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="18"
+                    Margin="0,0,16,0">
+                <StackPanel>
+                    <TextBlock Text="Calendario"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
+                    <Calendar SelectedDate="{Binding SelectedDate, Mode=TwoWay}" />
+                    <Border Background="{StaticResource SparkSoftAccentBrush}"
+                            CornerRadius="12"
+                            Padding="12"
+                            Margin="0,18,0,0">
+                        <TextBlock Text="O mesmo horario ativo fica bloqueado para evitar duas consultas marcadas ao mesmo tempo."
+                                   Foreground="{StaticResource SparkAccentBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{StaticResource SparkPanelBrush}"
+                    BorderBrush="{StaticResource SparkLineBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="12">
+                <DataGrid ItemsSource="{Binding ConsultasSource}"
+                          SelectedItem="{Binding SelectedConsulta, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          RowHeaderWidth="0"
+                          BorderThickness="0"
+                          FontSize="13"
+                          RowHeight="36"
+                          AlternatingRowBackground="#FAF6EC">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Horario" Binding="{Binding Horario}" Width="92" />
+                        <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNome}" Width="2.2*" />
+                        <DataGridTextColumn Header="Local" Binding="{Binding Local}" Width="1.2*" />
+                        <DataGridTextColumn Header="Profissional/Sala" Binding="{Binding ProfissionalSala}" Width="1.4*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="116" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Background="{StaticResource SparkPanelBrush}"
+                BorderBrush="{StaticResource SparkLineBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="18"
+                Margin="0,16,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Agendar consulta"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,14" />
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="130" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <Label Content="Cliente cadastrado" />
+                        <ComboBox ItemsSource="{Binding ClientesSource}"
+                                  DisplayMemberPath="Nome"
+                                  SelectedValuePath="IdLocal"
+                                  SelectedValue="{Binding SelectedClienteId, Mode=TwoWay}"
+                                  Style="{StaticResource SparkComboBoxStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <Label Content="Dia" />
+                        <DatePicker SelectedDate="{Binding FormDate, Mode=TwoWay}"
+                                    Style="{StaticResource SparkDatePickerStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4">
+                        <Label Content="Horario" />
+                        <TextBox Text="{Binding Horario, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource SparkTextBoxStyle}"
+                                 LostFocus="ConsultaHorarioTextBox_LostFocus" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="6">
+                        <Label Content="Local" />
+                        <TextBox Text="{Binding Local, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource SparkTextBoxStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="8">
+                        <Label Content="Profissional ou sala" />
+                        <ComboBox ItemsSource="{Binding ProfissionaisSource}"
+                                  DisplayMemberPath="NomeExibicao"
+                                  SelectedValuePath="IdLocal"
+                                  SelectedValue="{Binding SelectedProfissionalId, Mode=TwoWay}"
+                                  Style="{StaticResource SparkComboBoxStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="10">
+                        <Label Content="Status" />
+                        <ComboBox ItemsSource="{Binding StatusOptions}"
+                                  SelectedItem="{Binding Status, Mode=TwoWay}"
+                                  Style="{StaticResource SparkComboBoxStyle}">
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="2" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <Label Content="Observacoes" />
+                        <TextBox Text="{Binding Observacoes, UpdateSourceTrigger=PropertyChanged}"
+                                 MinHeight="58"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Padding="9,7"
+                                 BorderBrush="{StaticResource SparkLineBrush}"
+                                 BorderThickness="1" />
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Foreground="{Binding StatusBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Bottom">
+                        <Button Content="Salvar"
+                                Style="{StaticResource SparkPrimaryButtonStyle}"
+                                Command="{Binding SaveCommand}" />
+                        <Button Content="Nova"
+                                Style="{StaticResource SparkSecondaryButtonStyle}"
+                                Margin="8,0,0,0"
+                                Command="{Binding NewCommand}" />
+                        <Button Content="Excluir"
+                                Style="{StaticResource SparkDangerButtonStyle}"
+                                Margin="8,0,0,0"
+                                Command="{Binding DeleteCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

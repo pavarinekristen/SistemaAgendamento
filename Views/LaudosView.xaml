@@ -1,0 +1,81 @@
+<UserControl x:Class="AgendamentoWpfApp.Views.LaudosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Laudos e impressao"
+                       Style="{StaticResource SparkSectionTitleStyle}" />
+            <TextBlock Text="Modelo exemplo preenchido com dados do cliente e da consulta."
+                       Foreground="{StaticResource SparkMutedBrush}"
+                       FontSize="13"
+                       Margin="0,4,0,0" />
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Background="{StaticResource SparkPanelBrush}"
+                BorderBrush="{StaticResource SparkLineBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="22">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="420" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <Label Content="Cliente" />
+                    <ComboBox x:Name="LaudoClienteComboBox"
+                              DisplayMemberPath="Nome"
+                              SelectionChanged="LaudoClienteComboBox_SelectionChanged" />
+
+                    <Label Content="Consulta" Margin="0,12,0,0" />
+                    <ComboBox x:Name="LaudoConsultaComboBox"
+                              DisplayMemberPath="DataHoraTexto" />
+
+                    <Button Content="Gerar PDF exemplo"
+                            Style="{StaticResource SparkPrimaryButtonStyle}"
+                            Margin="0,18,0,0"
+                            HorizontalAlignment="Left"
+                            Click="GerarPdfExemploButton_Click" />
+
+                    <TextBlock x:Name="LaudoStatusTextBlock"
+                               Foreground="{StaticResource SparkMutedBrush}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Margin="0,14,0,0" />
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        Background="#FAF6EC"
+                        BorderBrush="{StaticResource SparkLineBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="18"
+                        Margin="18,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Modelo exemplo"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10" />
+                        <TextBlock Text="SPARKCORE - LAUDO / RELATORIO DE ATENDIMENTO"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,12" />
+                        <TextBlock Text="Campos preenchidos automaticamente: cliente, CPF, telefone, e-mail, data, horario, local, profissional/sala e observacoes."
+                                   Foreground="{StaticResource SparkMutedBrush}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="Quando o PDF padrao final existir, esta mesma tela passa a usar o modelo oficial."
+                                   Foreground="{StaticResource SparkMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

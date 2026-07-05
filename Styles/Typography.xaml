@@ -1,0 +1,36 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="SparkTextBlockStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
+    </Style>
+
+    <Style x:Key="SparkLabelTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
+        <Setter Property="Margin" Value="0,0,0,7" />
+    </Style>
+
+    <Style x:Key="SparkFormLabelStyle" TargetType="Label">
+        <Setter Property="Foreground" Value="{StaticResource SparkMutedBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="0,0,0,4" />
+    </Style>
+
+    <Style x:Key="SparkSectionTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
+    </Style>
+
+    <Style x:Key="SparkWatermarkStyle" TargetType="TextBlock">
+        <Setter Property="Text" Value="Feito com ❤️ pela Sparkware" />
+        <Setter Property="Foreground" Value="#8A7C6C" />
+        <Setter Property="Opacity" Value="0.58" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="Margin" Value="0,0,18,10" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+</ResourceDictionary>

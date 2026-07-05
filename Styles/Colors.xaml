@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Paleta oficial SparkCore/Sparkware: bege, laranja, preto e branco. -->
+    <Color x:Key="SparkInkColor">#1C1713</Color>
+    <Color x:Key="SparkMutedColor">#8A7C6C</Color>
+    <Color x:Key="SparkLineColor">#E8DFCE</Color>
+    <Color x:Key="SparkPanelColor">#FFFFFF</Color>
+    <Color x:Key="SparkPageColor">#F6F1E7</Color>
+    <Color x:Key="SparkFieldColor">#FBF8F2</Color>
+    <Color x:Key="SparkAccentColor">#E8720F</Color>
+    <Color x:Key="SparkAccentHoverColor">#C95E0C</Color>
+    <Color x:Key="SparkSoftAccentColor">#FCEBD9</Color>
+    <Color x:Key="SparkDangerColor">#C0392B</Color>
+    <Color x:Key="SparkWarningBgColor">#FFF6E8</Color>
+    <Color x:Key="SparkDarkColor">#201914</Color>
+    <Color x:Key="SparkDarkSoftColor">#33291F</Color>
+
+    <SolidColorBrush x:Key="SparkInkBrush" Color="{StaticResource SparkInkColor}" />
+    <SolidColorBrush x:Key="SparkMutedBrush" Color="{StaticResource SparkMutedColor}" />
+    <SolidColorBrush x:Key="SparkLineBrush" Color="{StaticResource SparkLineColor}" />
+    <SolidColorBrush x:Key="SparkPanelBrush" Color="{StaticResource SparkPanelColor}" />
+    <SolidColorBrush x:Key="SparkPageBrush" Color="{StaticResource SparkPageColor}" />
+    <SolidColorBrush x:Key="SparkFieldBrush" Color="{StaticResource SparkFieldColor}" />
+    <SolidColorBrush x:Key="SparkAccentBrush" Color="{StaticResource SparkAccentColor}" />
+    <SolidColorBrush x:Key="SparkAccentHoverBrush" Color="{StaticResource SparkAccentHoverColor}" />
+    <SolidColorBrush x:Key="SparkSoftAccentBrush" Color="{StaticResource SparkSoftAccentColor}" />
+    <SolidColorBrush x:Key="SparkDangerBrush" Color="{StaticResource SparkDangerColor}" />
+    <SolidColorBrush x:Key="SparkDarkBrush" Color="{StaticResource SparkDarkColor}" />
+    <SolidColorBrush x:Key="SparkDarkSoftBrush" Color="{StaticResource SparkDarkSoftColor}" />
+
+    <!-- Painel escuro com leve gradiente para dar profundidade (login/vitrines). -->
+    <LinearGradientBrush x:Key="SparkDarkPanelBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#201914" Offset="0" />
+        <GradientStop Color="#2C2118" Offset="0.65" />
+        <GradientStop Color="#3A2A1C" Offset="1" />
+    </LinearGradientBrush>
+</ResourceDictionary>

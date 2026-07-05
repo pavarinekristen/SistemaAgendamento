@@ -1,0 +1,99 @@
+AGENDAMENTO WPF APP - DESKTOP
+Data: 02/07/2026
+
+PASTA DO APP
+C:\Users\krist\AgendamentoWpfApp
+
+SOLUCAO
+C:\Users\krist\AgendamentoWpfApp\AgendamentoWpfApp.sln
+
+
+1. O QUE FOI CRIADO
+
+Aplicativo desktop em C# WPF com:
+
+- Tela de login.
+- Tela de criar conta.
+- Envio de codigo por e-mail pela API.
+- Confirmacao de e-mail pelo codigo.
+- Login conectado na API.
+- Tela simples apos login confirmando sessao iniciada.
+
+O WPF nao pede servidor na tela.
+Ele le a URL da API pela variavel:
+
+AGENDAMENTO_RETAGUARDA_URL
+
+Se a variavel nao existir, usa:
+
+http://localhost:5000
+
+
+2. INICIAR API
+
+Subir MySQL:
+
+cd C:\Users\krist\RetaguardaAgendamentoAPI
+docker compose -f docker-compose.mysql.yml up -d db_mysql
+
+Verificar MySQL:
+
+docker ps --filter "name=agenda-db-mysql"
+
+Rodar API:
+
+cd C:\Users\krist\RetaguardaAgendamentoAPI
+$env:ASPNETCORE_URLS="http://localhost:5000"
+$env:ASPNETCORE_ENVIRONMENT="Development"
+$env:AGENDA_OPERACIONAL_DATABASE="agenda_operacional"
+$env:ConnectionStrings__DefaultConnection="Server=localhost;Port=3308;Database=retaguarda_agendamento;Uid=agenda_user;Pwd=AgendaUser@2026;"
+$env:ConnectionStrings__AdminConnection="Server=localhost;Port=3308;Uid=root;Pwd=AgendaRoot@2026;"
+
+dotnet run --project RetaguardaAgendamentoAPI\RetaguardaAgendamentoAPI.csproj --urls "http://localhost:5000"
+
+
+3. RODAR O WPF
+
+Abrir outro PowerShell:
+
+cd C:\Users\krist\AgendamentoWpfApp
+$env:AGENDAMENTO_RETAGUARDA_URL="http://localhost:5000"
+
+dotnet run --project AgendamentoWpfApp.csproj
+
+
+4. FLUXO PELO WPF
+
+1. Clicar em Criar conta.
+2. Preencher dados da empresa, usuario, e-mail e senha.
+3. Clicar em Enviar codigo.
+4. Abrir o e-mail informado.
+5. Copiar o codigo recebido.
+6. Digitar o codigo na tela do WPF.
+7. Clicar em Confirmar.
+8. Voltar para o login.
+9. Entrar com e-mail e senha.
+
+
+5. DADOS DE TESTE
+
+Senha sugerida:
+Senha@123
+
+O e-mail pode ser qualquer e-mail valido.
+O codigo sera enviado pelo remetente configurado na API:
+
+retaguardaagendamento@gmail.com
+
+
+6. OBSERVACOES
+
+Se aparecer conta pendente:
+- confirme o e-mail antes do login.
+
+Se aparecer erro de conexao:
+- confirme se a API esta rodando em http://localhost:5000.
+- confirme se o MySQL esta ativo no Docker.
+
+O token recebido da API fica em memoria no SessionState.
+Os proximos modulos do WPF devem usar esse token para chamar endpoints protegidos.

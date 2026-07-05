@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Saidas de build/publish locais (instalador e publish passam de 100MB)
+artifacts/
+*.log
