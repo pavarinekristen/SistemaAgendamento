@@ -147,7 +147,7 @@ public partial class MainWindow : Window
         }
 
         SetBusy(true);
-        ShowStatus("Solicitando recuperacao de senha...", StatusKind.Info);
+        ShowStatus("Solicitando codigo de redefinicao...", StatusKind.Info);
 
         try
         {
@@ -158,15 +158,20 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var mensagem = result.Value.Mensagem ?? "Solicitacao registrada.";
-            if (!string.IsNullOrWhiteSpace(result.Value.SenhaTemporaria))
-                mensagem += $" Senha temporaria: {result.Value.SenhaTemporaria}";
-
-            ShowStatus(mensagem, StatusKind.Info);
+            ShowStatus(result.Value.Mensagem ?? "Se o e-mail estiver cadastrado, um codigo sera enviado.", StatusKind.Info);
         }
         finally
         {
             SetBusy(false);
+        }
+
+        // Segunda etapa: codigo recebido por e-mail + nova senha.
+        var resetWindow = new ResetPasswordWindow(_authApiService, email) { Owner = this };
+        if (resetWindow.ShowDialog() == true)
+        {
+            PasswordBox.Password = string.Empty;
+            PasswordRevealTextBox.Text = string.Empty;
+            ShowStatus("Senha redefinida com sucesso. Entre com a nova senha.", StatusKind.Info);
         }
     }
 
