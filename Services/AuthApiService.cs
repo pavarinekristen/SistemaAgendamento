@@ -123,6 +123,34 @@ internal sealed class AuthApiService
         }
     }
 
+    public async Task<ApiOperationResult<RedefinirSenhaResponse>> RedefinirSenhaAsync(string email, string codigo, string novaSenha)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                $"{AppSettings.ApiBaseUrl}/auth/redefinir-senha",
+                new RedefinirSenhaRequest(email, codigo, novaSenha));
+
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+                return ApiOperationResult<RedefinirSenhaResponse>.Fail(TryReadApiError(body) ?? "Nao foi possivel redefinir a senha.");
+
+            var result = JsonSerializer.Deserialize<RedefinirSenhaResponse>(body, _jsonOptions);
+            if (result == null)
+                return ApiOperationResult<RedefinirSenhaResponse>.Fail("A API retornou uma resposta vazia.");
+
+            return ApiOperationResult<RedefinirSenhaResponse>.Ok(result);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiOperationResult<RedefinirSenhaResponse>.Fail($"Nao foi possivel conectar na API em {AppSettings.ApiBaseUrl}.");
+        }
+        catch (Exception ex)
+        {
+            return ApiOperationResult<RedefinirSenhaResponse>.Fail($"Erro inesperado: {ex.Message}");
+        }
+    }
+
     public async Task<bool> CheckConnectionAsync()
     {
         try
@@ -197,13 +225,19 @@ internal sealed class ApiOperationResult<T> : ApiOperationResult
 internal sealed record LoginRequest(string Email, string Senha);
 internal sealed record ConfirmEmailRequest(string Email, string Codigo);
 internal sealed record RecuperarSenhaRequest(string Email);
+internal sealed record RedefinirSenhaRequest(string Email, string Codigo, string NovaSenha);
 
 internal sealed class RecuperarSenhaResponse
 {
     public bool Sucesso { get; set; }
-    public bool SenhaAlterada { get; set; }
     public string? Mensagem { get; set; }
-    public string? SenhaTemporaria { get; set; }
+    public string? CodigoResetTeste { get; set; }
+}
+
+internal sealed class RedefinirSenhaResponse
+{
+    public bool Sucesso { get; set; }
+    public string? Mensagem { get; set; }
 }
 
 internal sealed class CreateAccountRequest
