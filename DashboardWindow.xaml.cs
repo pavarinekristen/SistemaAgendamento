@@ -41,7 +41,9 @@ public partial class DashboardWindow : Window
         LocalSqliteBackupService backupService)
     {
         InitializeComponent();
-        SessionSummaryTextBlock.Text = $"{SessionState.UsuarioNome} - {SessionState.EmpresaNome} - {SessionState.BaseUrl}";
+        SessionSummaryTextBlock.Text = $"{SessionState.UsuarioNome} · {SessionState.EmpresaNome}";
+        ApiChipTextBlock.Text = SessionState.BaseUrl;
+        SidebarStatusTextBlock.Text = $"Conectado · v{GetAppVersion()}";
 
         _workspaceService = workspaceService;
         _clienteWorkflow = clienteWorkflow;

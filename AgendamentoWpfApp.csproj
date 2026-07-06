@@ -24,6 +24,16 @@
   <ItemGroup>
     <None Remove="Assets\SparkCore.ico" />
     <Resource Include="Assets\SparkCore.ico" />
+    <None Remove="Assets\sparkcore-bg.png" />
+    <Resource Include="Assets\sparkcore-bg.png" />
+    <Content Include="Assets\login-hologram.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Assets\hologram\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -33,21 +43,32 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
   </ItemGroup>
 
   <Target Name="PublishSparkCoreUpdater" BeforeTargets="Publish">
-    <MSBuild Projects="Tools\SparkCore.Updater\SparkCore.Updater.csproj"
-             Targets="Publish"
-             Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true;PublishDir=$(MSBuildProjectDirectory)\artifacts\updater-publish\" />
+    <MSBuild Projects="Tools\SparkCore.Updater\SparkCore.Updater.csproj" Targets="Publish" Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true;PublishDir=$(MSBuildProjectDirectory)\artifacts\updater-publish\" />
   </Target>
 
   <Target Name="CopySparkCoreUpdaterToPublish" AfterTargets="Publish">
     <ItemGroup>
       <SparkCoreUpdaterPublishFiles Include="$(MSBuildProjectDirectory)\artifacts\updater-publish\**\*" />
     </ItemGroup>
-    <Copy SourceFiles="@(SparkCoreUpdaterPublishFiles)"
-          DestinationFiles="@(SparkCoreUpdaterPublishFiles->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(SparkCoreUpdaterPublishFiles)" DestinationFiles="@(SparkCoreUpdaterPublishFiles->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="CopyHologramThreeJsToOutput" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\hologram\three.js"
+          DestinationFolder="$(TargetDir)Assets\hologram\"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(MSBuildProjectDirectory)\Assets\hologram\three.js')" />
+  </Target>
+
+  <Target Name="CopyHologramThreeJsToPublish" AfterTargets="Publish">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\hologram\three.js"
+          DestinationFolder="$(PublishDir)Assets\hologram\"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(MSBuildProjectDirectory)\Assets\hologram\three.js') and '$(PublishDir)' != ''" />
   </Target>
 
 </Project>

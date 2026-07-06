@@ -95,6 +95,48 @@ internal sealed class AuthApiService
         }
     }
 
+    public async Task<ApiOperationResult<RecuperarSenhaResponse>> RecuperarSenhaAsync(string email)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                $"{AppSettings.ApiBaseUrl}/auth/recuperar-senha",
+                new RecuperarSenhaRequest(email));
+
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+                return ApiOperationResult<RecuperarSenhaResponse>.Fail(TryReadApiError(body) ?? "Nao foi possivel recuperar a senha.");
+
+            var result = JsonSerializer.Deserialize<RecuperarSenhaResponse>(body, _jsonOptions);
+            if (result == null)
+                return ApiOperationResult<RecuperarSenhaResponse>.Fail("A API retornou uma resposta vazia.");
+
+            return ApiOperationResult<RecuperarSenhaResponse>.Ok(result);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiOperationResult<RecuperarSenhaResponse>.Fail($"Nao foi possivel conectar na API em {AppSettings.ApiBaseUrl}.");
+        }
+        catch (Exception ex)
+        {
+            return ApiOperationResult<RecuperarSenhaResponse>.Fail($"Erro inesperado: {ex.Message}");
+        }
+    }
+
+    public async Task<bool> CheckConnectionAsync()
+    {
+        try
+        {
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var response = await _httpClient.GetAsync($"{AppSettings.ApiBaseUrl}/health", cts.Token);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private string? TryReadApiError(string body)
     {
         try
@@ -154,6 +196,15 @@ internal sealed class ApiOperationResult<T> : ApiOperationResult
 
 internal sealed record LoginRequest(string Email, string Senha);
 internal sealed record ConfirmEmailRequest(string Email, string Codigo);
+internal sealed record RecuperarSenhaRequest(string Email);
+
+internal sealed class RecuperarSenhaResponse
+{
+    public bool Sucesso { get; set; }
+    public bool SenhaAlterada { get; set; }
+    public string? Mensagem { get; set; }
+    public string? SenhaTemporaria { get; set; }
+}
 
 internal sealed class CreateAccountRequest
 {

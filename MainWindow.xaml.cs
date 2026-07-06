@@ -1,9 +1,11 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using AgendamentoWpfApp.Services;
 using AgendamentoWpfApp.Services.Validation;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AgendamentoWpfApp;
@@ -12,6 +14,7 @@ public partial class MainWindow : Window
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly AuthApiService _authApiService;
+    private bool _passwordVisible;
 
     internal MainWindow(IServiceProvider serviceProvider, AuthApiService authApiService)
     {
@@ -19,6 +22,34 @@ public partial class MainWindow : Window
         _authApiService = authApiService;
         InitializeComponent();
         ApiInfoTextBlock.Text = $"API: {AppSettings.ApiBaseUrl}";
+        Loaded += async (_, _) =>
+        {
+            await InitializeHologramAsync();
+            await RefreshConnectionStatusAsync();
+        };
+    }
+
+    private async Task InitializeHologramAsync()
+    {
+        var assetsPath = Path.Combine(AppContext.BaseDirectory, "Assets");
+        var hologramPath = Path.Combine(assetsPath, "login-hologram.html");
+        if (!Directory.Exists(assetsPath) || !File.Exists(hologramPath))
+            return;
+
+        HologramWebView.DefaultBackgroundColor = global::System.Drawing.Color.Transparent;
+        await HologramWebView.EnsureCoreWebView2Async();
+        HologramWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+        HologramWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
+        HologramWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+            "sparkcore.local",
+            assetsPath,
+            CoreWebView2HostResourceAccessKind.Allow);
+        HologramWebView.Source = new Uri("https://sparkcore.local/login-hologram.html");
+    }
+
+    private string GetPassword()
+    {
+        return _passwordVisible ? PasswordRevealTextBox.Text : PasswordBox.Password;
     }
 
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -30,7 +61,7 @@ public partial class MainWindow : Window
     {
         var baseUrl = AppSettings.ApiBaseUrl;
         var email = EmailTextBox.Text.Trim();
-        var senha = PasswordBox.Password;
+        var senha = GetPassword();
 
         if (string.IsNullOrWhiteSpace(email) ||
             string.IsNullOrWhiteSpace(senha))
@@ -79,12 +110,95 @@ public partial class MainWindow : Window
         }
     }
 
+    private void TogglePasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        _passwordVisible = !_passwordVisible;
+
+        if (_passwordVisible)
+        {
+            PasswordRevealTextBox.Text = PasswordBox.Password;
+            PasswordRevealTextBox.Visibility = Visibility.Visible;
+            PasswordBox.Visibility = Visibility.Collapsed;
+            EyeIcon.Visibility = Visibility.Collapsed;
+            EyeOffIcon.Visibility = Visibility.Visible;
+            PasswordRevealTextBox.Focus();
+            PasswordRevealTextBox.CaretIndex = PasswordRevealTextBox.Text.Length;
+        }
+        else
+        {
+            PasswordBox.Password = PasswordRevealTextBox.Text;
+            PasswordBox.Visibility = Visibility.Visible;
+            PasswordRevealTextBox.Visibility = Visibility.Collapsed;
+            EyeIcon.Visibility = Visibility.Visible;
+            EyeOffIcon.Visibility = Visibility.Collapsed;
+            PasswordBox.Focus();
+        }
+    }
+
+    private async void ForgotPasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        var email = EmailTextBox.Text.Trim();
+
+        if (string.IsNullOrWhiteSpace(email) || !InputNormalizer.IsValidEmail(email))
+        {
+            ShowStatus("Digite seu e-mail no campo acima e clique em Esqueceu? novamente.", StatusKind.Warning);
+            EmailTextBox.Focus();
+            return;
+        }
+
+        SetBusy(true);
+        ShowStatus("Solicitando recuperacao de senha...", StatusKind.Info);
+
+        try
+        {
+            var result = await _authApiService.RecuperarSenhaAsync(email);
+            if (!result.Success || result.Value == null)
+            {
+                ShowStatus(result.Message, StatusKind.Error);
+                return;
+            }
+
+            var mensagem = result.Value.Mensagem ?? "Solicitacao registrada.";
+            if (!string.IsNullOrWhiteSpace(result.Value.SenhaTemporaria))
+                mensagem += $" Senha temporaria: {result.Value.SenhaTemporaria}";
+
+            ShowStatus(mensagem, StatusKind.Info);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async Task RefreshConnectionStatusAsync()
+    {
+        var online = await _authApiService.CheckConnectionAsync();
+
+        if (online)
+        {
+            var green = Color.FromRgb(34, 197, 94);
+            ConnectionDot.Fill = new SolidColorBrush(green);
+            ConnectionDotGlow.Color = green;
+            ConnectionStatusTextBlock.Text = "Conectado";
+        }
+        else
+        {
+            var red = Color.FromRgb(217, 83, 60);
+            ConnectionDot.Fill = new SolidColorBrush(red);
+            ConnectionDotGlow.Color = red;
+            ConnectionStatusTextBlock.Text = "Offline";
+        }
+    }
+
     private void SetBusy(bool busy)
     {
         LoginButton.IsEnabled = !busy;
         LoginButton.Content = busy ? "Entrando..." : "Entrar";
         EmailTextBox.IsEnabled = !busy;
         PasswordBox.IsEnabled = !busy;
+        PasswordRevealTextBox.IsEnabled = !busy;
+        ForgotPasswordButton.IsEnabled = !busy;
+        TogglePasswordButton.IsEnabled = !busy;
     }
 
     private void CreateAccountButton_Click(object sender, RoutedEventArgs e)
@@ -117,9 +231,9 @@ public partial class MainWindow : Window
                 StatusTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(113, 78, 28));
                 break;
             default:
-                StatusBorder.Background = new SolidColorBrush(Color.FromRgb(252, 235, 217));
-                StatusBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(242, 217, 184));
-                StatusTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(201, 94, 12));
+                StatusBorder.Background = new SolidColorBrush(Color.FromRgb(253, 243, 234));
+                StatusBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(247, 224, 204));
+                StatusTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(194, 90, 8));
                 break;
         }
     }

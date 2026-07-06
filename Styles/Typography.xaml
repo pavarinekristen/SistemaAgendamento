@@ -4,29 +4,72 @@
         <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
     </Style>
 
-    <Style x:Key="SparkLabelTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+    <!-- Titulo da tela: 27px bold -->
+    <Style x:Key="SparkSectionTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="27" />
+        <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
+    </Style>
+
+    <!-- Subtitulo da tela -->
+    <Style x:Key="SparkSubtitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="Foreground" Value="{StaticResource SparkMutedBrush}" />
+        <Setter Property="Margin" Value="0,6,0,0" />
+    </Style>
+
+    <!-- Titulo de card: 16px bold -->
+    <Style x:Key="SparkCardTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Label de campo -->
+    <Style x:Key="SparkLabelTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SparkBodyBrush}" />
         <Setter Property="Margin" Value="0,0,0,7" />
     </Style>
 
     <Style x:Key="SparkFormLabelStyle" TargetType="Label">
-        <Setter Property="Foreground" Value="{StaticResource SparkMutedBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource SparkBodyBrush}" />
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="Padding" Value="0,0,0,4" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="0,0,0,5" />
     </Style>
 
-    <Style x:Key="SparkSectionTitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="24" />
+    <!-- Label de campo das telas de acesso (login/criar conta) -->
+    <Style x:Key="SparkFieldLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12.5" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{StaticResource SparkInkBrush}" />
+        <Setter Property="Foreground" Value="#44403C" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <!-- Texto forte de celula de tabela (nome/cliente) -->
+    <Style x:Key="SparkCellStrongTextStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="Foreground" Value="{StaticResource SparkTextBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Texto de destaque laranja de celula (horario) -->
+    <Style x:Key="SparkCellAccentTextStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="Foreground" Value="{StaticResource SparkAccentBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="SparkWatermarkStyle" TargetType="TextBlock">
         <Setter Property="Text" Value="Feito com ❤️ pela Sparkware" />
-        <Setter Property="Foreground" Value="#8A7C6C" />
-        <Setter Property="Opacity" Value="0.58" />
+        <Setter Property="Foreground" Value="{StaticResource SparkFaintBrush}" />
+        <Setter Property="Opacity" Value="0.7" />
         <Setter Property="FontSize" Value="11" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Bottom" />
