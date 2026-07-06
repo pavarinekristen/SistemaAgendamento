@@ -1,68 +1,112 @@
 <UserControl x:Class="AgendamentoWpfApp.Views.ProfissionaisView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <!-- Checkbox 22px com gradiente quando marcado -->
+        <Style x:Key="SparkCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="#3F3A33" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="CheckBorder"
+                                    Width="22" Height="22"
+                                    CornerRadius="7"
+                                    Background="{StaticResource SparkFieldBrush}"
+                                    BorderBrush="#D8CFC3"
+                                    BorderThickness="1.5">
+                                <Path x:Name="CheckMark"
+                                      Data="M20,6 L9,17 L4,12"
+                                      Stroke="White" StrokeThickness="3.2"
+                                      StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Width="13" Height="13" Stretch="Uniform"
+                                      Opacity="0"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center" Margin="10,0,0,0" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBorder" Property="Background" Value="{StaticResource SparkAccentGradientBrush}" />
+                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{StaticResource SparkAccentBrush}" />
+                                <Setter TargetName="CheckMark" Property="Opacity" Value="1" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,14">
-            <TextBlock Text="Profissionais e salas"
-                       Style="{StaticResource SparkSectionTitleStyle}" />
-            <TextBlock Text="{Binding CountText}"
-                       Foreground="{StaticResource SparkMutedBrush}"
-                       FontSize="13"
-                       Margin="0,4,0,0" />
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Profissionais e salas" Style="{StaticResource SparkSectionTitleStyle}" />
+            <TextBlock Text="{Binding CountText}" Style="{StaticResource SparkSubtitleStyle}" />
         </StackPanel>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="430" />
+                <ColumnDefinition Width="400" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
+            <!-- Card de cadastro -->
             <Border Grid.Column="0"
-                    Background="{StaticResource SparkPanelBrush}"
-                    BorderBrush="{StaticResource SparkLineBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12"
-                    Padding="18"
-                    Margin="0,0,16,0">
+                    Style="{StaticResource SparkCardStyle}"
+                    Padding="24"
+                    Margin="0,0,22,0"
+                    VerticalAlignment="Top">
                 <StackPanel>
-                    <TextBlock Text="Cadastro"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,14" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <Border Style="{StaticResource SparkIconChipStyle}">
+                            <Path Data="M16,21 L16,19 C16,16.8 14.2,15 12,15 L6,15 C3.8,15 2,16.8 2,19 L2,21 M13,7 A4,4 0 1 1 5,7 A4,4 0 1 1 13,7 M17,11 L19,13 L23,9"
+                                  Stroke="{StaticResource SparkAccentBrush}" StrokeThickness="2"
+                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="18" Height="18" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="Cadastro"
+                                   Style="{StaticResource SparkCardTitleStyle}"
+                                   Margin="10,0,0,0" />
+                    </StackPanel>
 
                     <Label Content="Nome" />
                     <TextBox Text="{Binding Nome, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource SparkTextBoxStyle}" />
 
-                    <Grid Margin="0,10,0,0">
+                    <Grid Margin="0,16,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150" />
-                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="14" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <Label Content="Tipo" />
                             <ComboBox ItemsSource="{Binding Tipos}"
                                       SelectedItem="{Binding Tipo, Mode=TwoWay}"
-                                      Style="{StaticResource SparkComboBoxStyle}">
-                            </ComboBox>
+                                      Style="{StaticResource SparkComboBoxStyle}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <Label Content="Especialidade/funcao" />
+                            <Label Content="Especialidade/função" />
                             <TextBox Text="{Binding EspecialidadeFuncao, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource SparkTextBoxStyle}" />
                         </StackPanel>
                     </Grid>
 
-                    <Grid Margin="0,10,0,0">
+                    <Grid Margin="0,16,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="14" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
@@ -77,65 +121,93 @@
                         </StackPanel>
                     </Grid>
 
-                    <Label Content="Observacoes" Margin="0,10,0,0" />
+                    <Label Content="Observações" Margin="0,16,0,0" />
                     <TextBox Text="{Binding Observacoes, UpdateSourceTrigger=PropertyChanged}"
-                             MinHeight="86"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto"
-                             Padding="9,7"
-                             BorderBrush="{StaticResource SparkLineBrush}"
-                             BorderThickness="1" />
+                             Style="{StaticResource SparkTextAreaStyle}"
+                             MinHeight="92" />
 
                     <CheckBox Content="Ativo"
                               IsChecked="{Binding Ativo, Mode=TwoWay}"
-                              Margin="0,12,0,0" />
+                              Style="{StaticResource SparkCheckBoxStyle}"
+                              Margin="0,18,0,0" />
 
                     <TextBlock Text="{Binding StatusMessage}"
                                Foreground="{Binding StatusBrush}"
                                FontSize="12"
                                TextWrapping="Wrap"
-                               Margin="0,12,0,0" />
+                               Margin="0,14,0,0" />
 
-                    <WrapPanel Margin="0,14,0,0">
+                    <WrapPanel Margin="0,16,0,0">
                         <Button Content="Salvar"
                                 Style="{StaticResource SparkPrimaryButtonStyle}"
                                 Command="{Binding SaveCommand}" />
                         <Button Content="Novo"
                                 Style="{StaticResource SparkSecondaryButtonStyle}"
-                                Margin="8,0,0,0"
+                                Margin="10,0,0,0"
                                 Command="{Binding NewCommand}" />
                         <Button Content="Excluir"
                                 Style="{StaticResource SparkDangerButtonStyle}"
-                                Margin="8,0,0,0"
+                                Margin="10,0,0,0"
                                 Command="{Binding DeleteCommand}" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
 
+            <!-- Tabela -->
             <Border Grid.Column="1"
-                    Background="{StaticResource SparkPanelBrush}"
-                    BorderBrush="{StaticResource SparkLineBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12"
-                    Padding="10">
+                    Style="{StaticResource SparkCardStyle}"
+                    Padding="6"
+                    VerticalAlignment="Top">
                 <DataGrid ItemsSource="{Binding Items}"
                           SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          GridLinesVisibility="Horizontal"
-                          HeadersVisibility="Column"
-                          RowHeaderWidth="0"
-                          BorderThickness="0"
-                          AlternatingRowBackground="#FAF6EC">
+                          Style="{StaticResource SparkDataGridStyle}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="120" />
-                        <DataGridTextColumn Header="Nome" Binding="{Binding Nome}" Width="2*" />
-                        <DataGridTextColumn Header="Funcao" Binding="{Binding EspecialidadeFuncao}" Width="*" />
-                        <DataGridTextColumn Header="Telefone" Binding="{Binding TelefoneFormatado}" Width="130" />
-                        <DataGridCheckBoxColumn Header="Ativo" Binding="{Binding Ativo}" Width="80" />
+                        <DataGridTemplateColumn Header="TIPO" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="#EEF2F7"
+                                            CornerRadius="8"
+                                            Padding="10,4"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Tipo}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#4A5768" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="NOME" Binding="{Binding Nome}" Width="1.5*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="FontSize" Value="13.5" />
+                                    <Setter Property="Foreground" Value="{StaticResource SparkTextBrush}" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="FUNÇÃO" Binding="{Binding EspecialidadeFuncao}" Width="*" />
+                        <DataGridTextColumn Header="TELEFONE" Binding="{Binding TelefoneFormatado}" Width="140" />
+                        <DataGridTemplateColumn Header="ATIVO" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Width="22" Height="22"
+                                            CornerRadius="7"
+                                            Background="#22C55E"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding Ativo, Converter={StaticResource BoolToVisibility}}">
+                                        <Path Data="M20,6 L9,17 L4,12"
+                                              Stroke="White" StrokeThickness="3.2"
+                                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Width="13" Height="13" Stretch="Uniform"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>

@@ -1,281 +1,534 @@
 <Window x:Class="AgendamentoWpfApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="SparkCore"
         Icon="Assets/SparkCore.ico"
-        Width="980"
-        Height="640"
-        MinWidth="860"
-        MinHeight="560"
+        Width="1240"
+        Height="760"
+        MinWidth="1020"
+        MinHeight="680"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource SparkPageBrush}">
-    <Window.Resources>
-        <SolidColorBrush x:Key="InkBrush" Color="#1C1713" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#8A7C6C" />
-        <SolidColorBrush x:Key="LineBrush" Color="#E8DFCE" />
-        <SolidColorBrush x:Key="FieldBrush" Color="#FBF8F2" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#E8720F" />
-        <SolidColorBrush x:Key="AccentHoverBrush" Color="#C95E0C" />
-        <SolidColorBrush x:Key="ErrorBrush" Color="#C0392B" />
-        <SolidColorBrush x:Key="SuccessBrush" Color="#2F6B4F" />
-
-        <Style x:Key="FieldTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="46" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
-            <Setter Property="Background" Value="{StaticResource FieldBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="FieldBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10">
-                            <ScrollViewer x:Name="PART_ContentHost" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="FieldBorder" Property="BorderBrush" Value="#D8C6A8" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="FieldBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="FieldBorder" Property="BorderThickness" Value="1.6" />
-                                <Setter TargetName="FieldBorder" Property="Background" Value="White" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FieldPasswordBoxStyle" TargetType="PasswordBox">
-            <Setter Property="Height" Value="46" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
-            <Setter Property="Background" Value="{StaticResource FieldBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="PasswordBox">
-                        <Border x:Name="FieldBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10">
-                            <ScrollViewer x:Name="PART_ContentHost" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="FieldBorder" Property="BorderBrush" Value="#D8C6A8" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="FieldBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="FieldBorder" Property="BorderThickness" Value="1.6" />
-                                <Setter TargetName="FieldBorder" Property="Background" Value="White" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="48" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="10">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource AccentHoverBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.85" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#CBBFAE" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="LabelStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
-            <Setter Property="Margin" Value="0,0,0,7" />
-        </Style>
-    </Window.Resources>
-
-    <Grid Margin="26">
-        <Border CornerRadius="16"
-                Background="White"
-                BorderBrush="{StaticResource LineBrush}"
-                BorderThickness="1">
+        Background="{StaticResource SparkDeskBrush}">
+    <!-- Design handoff: design_handoff_sparkcore_login (hi-fi). Estilos centralizados em Styles/. -->
+    <Grid Margin="28">
+        <!-- Card principal -->
+        <Border CornerRadius="14" Background="White" BorderBrush="#99FFFFFF" BorderThickness="1">
             <Border.Effect>
-                <DropShadowEffect Color="#1C1713"
-                                  BlurRadius="28"
-                                  ShadowDepth="4"
-                                  Direction="270"
-                                  Opacity="0.14" />
+                <DropShadowEffect Color="#140E08" BlurRadius="60" ShadowDepth="18" Direction="270" Opacity="0.4" />
             </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="0.92*" />
-                    <ColumnDefinition Width="1.08*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0"
-                        CornerRadius="16,0,0,16"
-                        Background="{StaticResource SparkDarkPanelBrush}"
-                        Padding="46">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                <!-- ESQUERDA: painel de marca -->
+                <Border Grid.Column="0" CornerRadius="14,0,0,14" Background="#180F0A">
+                    <Grid ClipToBounds="True">
+                        <Border CornerRadius="14,0,0,14">
+                            <Border.Background>
+                                <ImageBrush ImageSource="Assets/sparkcore-bg.png" Stretch="UniformToFill" />
+                            </Border.Background>
+                        </Border>
 
-                        <StackPanel VerticalAlignment="Center">
-                            <Border Width="52"
-                                    Height="52"
-                                    HorizontalAlignment="Left"
-                                    Background="{StaticResource AccentBrush}"
-                                    CornerRadius="12"
-                                    Margin="0,0,0,28">
-                                <TextBlock Text="SC"
-                                           FontWeight="Bold"
-                                           FontSize="19"
+                        <!-- Glow que respira -->
+                        <Ellipse Width="460" Height="460"
+                                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                                 Margin="-140,-120,0,0"
+                                 RenderTransformOrigin="0.5,0.5"
+                                 Opacity="0.55">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop Color="#38F7931E" Offset="0" />
+                                    <GradientStop Color="#00F7931E" Offset="0.66" />
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </Ellipse.RenderTransform>
+                            <Ellipse.Triggers>
+                                <EventTrigger RoutedEvent="Ellipse.Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0.55" To="0.9" Duration="0:0:4.5" />
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)"
+                                                             From="1" To="1.04" Duration="0:0:4.5" />
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
+                                                             From="1" To="1.04" Duration="0:0:4.5" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Ellipse.Triggers>
+                        </Ellipse>
+
+                        <!-- Quadriculado com mascara radial -->
+                        <Border CornerRadius="14,0,0,14" Background="{StaticResource SparkGridTextureBrush}" Opacity="0.45">
+                            <Border.OpacityMask>
+                                <RadialGradientBrush Center="0.25,0.25" GradientOrigin="0.25,0.25" RadiusX="1.3" RadiusY="1.1">
+                                    <GradientStop Color="#FF000000" Offset="0.35" />
+                                    <GradientStop Color="#00000000" Offset="0.88" />
+                                </RadialGradientBrush>
+                            </Border.OpacityMask>
+                        </Border>
+
+                        <!-- Escurecimento inferior -->
+                        <Border CornerRadius="14,0,0,14">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#000F0905" Offset="0.45" />
+                                    <GradientStop Color="#8C0F0905" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <!-- Conteudo -->
+                        <Grid Margin="52,52,56,52">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="46" Height="46" CornerRadius="13"
+                                        Background="{StaticResource SparkLogoGradientBrush}">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#E0670A" BlurRadius="22" ShadowDepth="6" Direction="270" Opacity="0.7" />
+                                    </Border.Effect>
+                                    <Grid Width="28" Height="28">
+                                        <Ellipse Width="24" Height="24"
+                                                 Stroke="#8CFFFFFF" StrokeThickness="2"
+                                                 StrokeDashArray="7.2,3.2" StrokeDashCap="Round" />
+                                        <Path Data="M17.6,6.8 L10.4,17.2 L14.7,17.2 L13.7,25.2 L21.6,13.8 L17,13.8 Z"
+                                              Fill="White" Stretch="Uniform" Width="11" Height="17"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" />
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="SparkCore" Foreground="White"
+                                           FontWeight="Bold" FontSize="19"
+                                           VerticalAlignment="Center" Margin="13,0,0,0" />
+                            </StackPanel>
+
+                            <!-- Saudacao -->
+                            <StackPanel x:Name="GreetingPanel" Grid.Row="1"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        Opacity="0"
+                                        RenderTransformOrigin="0.5,0.5">
+                                <StackPanel.RenderTransform>
+                                    <TranslateTransform Y="14" />
+                                </StackPanel.RenderTransform>
+
+                                <wv2:WebView2 x:Name="HologramWebView"
+                                              Width="340"
+                                              Height="430"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              IsHitTestVisible="False" />
+
+                                <Grid x:Name="HologramStage"
+                                      Width="300"
+                                      Height="322"
+                                      Visibility="Collapsed"
+                                      IsHitTestVisible="False"
+                                      RenderTransformOrigin="0.5,0.5">
+                                    <Grid.RenderTransform>
+                                        <TranslateTransform Y="0" />
+                                    </Grid.RenderTransform>
+
+                                    <Path Data="M88,24 L212,24 L300,292 L0,292 Z"
+                                          Stretch="Fill"
+                                          Margin="0,24,0,30"
+                                          Opacity="0.78">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                                <GradientStop Color="#29F7931E" Offset="0" />
+                                                <GradientStop Color="#05F7931E" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                        <Path.Effect>
+                                            <BlurEffect Radius="2" />
+                                        </Path.Effect>
+                                    </Path>
+
+                                    <Ellipse Width="230"
+                                             Height="56"
+                                             VerticalAlignment="Bottom"
+                                             Margin="0,0,0,6"
+                                             Opacity="0.95">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#66F7931E" Offset="0" />
+                                                <GradientStop Color="#00F7931E" Offset="0.68" />
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Effect>
+                                            <BlurEffect Radius="5" />
+                                        </Ellipse.Effect>
+                                    </Ellipse>
+
+                                    <Grid x:Name="HologramHead"
+                                          Width="214"
+                                          Height="238"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Top"
+                                          Margin="0,32,0,0"
+                                          Opacity="0.96"
+                                          RenderTransformOrigin="0.5,0.5">
+                                        <Grid.RenderTransform>
+                                            <TransformGroup>
+                                                <SkewTransform x:Name="HologramHeadSkew" AngleX="0" AngleY="0" />
+                                                <ScaleTransform x:Name="HologramHeadScale" ScaleX="1" ScaleY="1" />
+                                            </TransformGroup>
+                                        </Grid.RenderTransform>
+
+                                        <Path Data="M107,9 C67,9 47,42 50,85 C51,118 61,143 77,173 C86,191 91,215 107,221 C123,215 128,191 137,173 C153,143 163,118 164,85 C167,42 147,9 107,9 Z"
+                                              Fill="#12F7931E"
+                                              Stroke="#CCFBA53B"
+                                              StrokeThickness="1.2"
+                                              StrokeLineJoin="Round">
+                                            <Path.Effect>
+                                                <DropShadowEffect Color="#F7931E" BlurRadius="18" ShadowDepth="0" Opacity="0.75" />
+                                            </Path.Effect>
+                                        </Path>
+                                        <Path Data="M66,83 C78,70 136,70 148,83 M60,111 C82,124 132,124 154,111 M72,145 C91,156 123,156 142,145 M87,176 C99,183 115,183 127,176"
+                                              Stroke="#8AFFD39B"
+                                              StrokeThickness="0.9"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              Fill="Transparent" />
+                                        <Path Data="M107,14 C92,48 90,150 107,218 M107,14 C122,48 124,150 107,218 M75,33 C88,68 88,156 82,190 M139,33 C126,68 126,156 132,190"
+                                              Stroke="#65F7931E"
+                                              StrokeThickness="0.85"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              StrokeDashArray="3,4"
+                                              Fill="Transparent" />
+                                        <Path Data="M82,88 C91,82 99,83 104,90 M111,90 C116,83 125,82 134,88 M105,95 C102,116 98,130 90,141 M109,95 C112,116 116,130 124,141 M90,162 C101,169 113,169 124,162"
+                                              Stroke="#D7FFCA8A"
+                                              StrokeThickness="1.1"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              Fill="Transparent" />
+                                        <Path Data="M50,86 C33,98 37,129 56,135 M164,86 C181,98 177,129 158,135"
+                                              Stroke="#8AFBA53B"
+                                              StrokeThickness="0.9"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              Fill="Transparent" />
+                                        <Path Data="M86,197 C92,226 122,226 128,197 L137,229 L77,229 Z"
+                                              Fill="#0DF7931E"
+                                              Stroke="#7AFBA53B"
+                                              StrokeThickness="0.9" />
+
+                                        <Canvas Width="214" Height="238" Opacity="0.88">
+                                            <Ellipse Canvas.Left="74" Canvas.Top="30" Width="3" Height="3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="100" Canvas.Top="24" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="129" Canvas.Top="31" Width="3" Height="3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="63" Canvas.Top="58" Width="2.6" Height="2.6" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="88" Canvas.Top="56" Width="2.2" Height="2.2" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="115" Canvas.Top="55" Width="2.2" Height="2.2" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="145" Canvas.Top="58" Width="2.6" Height="2.6" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="59" Canvas.Top="83" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="86" Canvas.Top="85" Width="3" Height="3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="105" Canvas.Top="91" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="128" Canvas.Top="85" Width="3" Height="3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="153" Canvas.Top="83" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="68" Canvas.Top="112" Width="2.3" Height="2.3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="94" Canvas.Top="118" Width="2.7" Height="2.7" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="117" Canvas.Top="118" Width="2.7" Height="2.7" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="143" Canvas.Top="112" Width="2.3" Height="2.3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="78" Canvas.Top="145" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="106" Canvas.Top="150" Width="3" Height="3" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="134" Canvas.Top="145" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="91" Canvas.Top="176" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="121" Canvas.Top="176" Width="2.5" Height="2.5" Fill="#FFFFCA8A" />
+                                            <Ellipse Canvas.Left="104" Canvas.Top="207" Width="3" Height="3" Fill="#FFFFCA8A" />
+                                        </Canvas>
+                                    </Grid>
+
+                                    <Border x:Name="HologramScanlines"
+                                            Opacity="0.62"
+                                            IsHitTestVisible="False">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform Y="0" />
+                                        </Border.RenderTransform>
+                                        <Border.OpacityMask>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#00000000" Offset="0" />
+                                                <GradientStop Color="#FF000000" Offset="0.08" />
+                                                <GradientStop Color="#FF000000" Offset="0.9" />
+                                                <GradientStop Color="#00000000" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.OpacityMask>
+                                        <Border.Background>
+                                            <DrawingBrush TileMode="Tile" Viewport="0,0,1,4" ViewportUnits="Absolute" Stretch="None">
+                                                <DrawingBrush.Drawing>
+                                                    <GeometryDrawing Brush="#1EFFCD96">
+                                                        <GeometryDrawing.Geometry>
+                                                            <RectangleGeometry Rect="0,0,1,1" />
+                                                        </GeometryDrawing.Geometry>
+                                                    </GeometryDrawing>
+                                                </DrawingBrush.Drawing>
+                                            </DrawingBrush>
+                                        </Border.Background>
+                                    </Border>
+
+                                    <Ellipse Width="186"
+                                             Height="28"
+                                             VerticalAlignment="Bottom"
+                                             Margin="0,0,0,4"
+                                             Stroke="#8CF7931E"
+                                             StrokeThickness="1"
+                                             Fill="#05F7931E">
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="#F7931E" BlurRadius="22" ShadowDepth="0" Opacity="0.62" />
+                                        </Ellipse.Effect>
+                                    </Ellipse>
+                                    <Ellipse x:Name="HologramPulse"
+                                             Width="120"
+                                             Height="16"
+                                             VerticalAlignment="Bottom"
+                                             Margin="0,0,0,11"
+                                             Stroke="#4DF7931E"
+                                             StrokeThickness="1"
+                                             Fill="#08FFFFFF"
+                                             Opacity="0.65" />
+                                </Grid>
+
+                                <TextBlock Text="Bom te ver por aqui."
                                            Foreground="White"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           TextAlignment="Center"
+                                           Margin="0,14,0,0"
+                                           Visibility="Collapsed">
+                                    <TextBlock.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="2" Opacity="0.4" />
+                                    </TextBlock.Effect>
+                                </TextBlock>
+                                <TextBlock Text="Sua agenda organizada, do jeito que a clínica precisa."
+                                           Foreground="#9EFFFFFF"
+                                           FontSize="13.5"
+                                           LineHeight="21"
+                                           MaxWidth="280"
                                            HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
-                            </Border>
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="0,10,0,0"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
 
-                            <TextBlock Text="SparkCore"
-                                       Foreground="White"
-                                       FontSize="34"
-                                       FontWeight="SemiBold"
-                                       TextWrapping="Wrap"
-                                       LineHeight="40" />
-                            <Border Width="46"
-                                    Height="4"
-                                    CornerRadius="2"
-                                    Background="{StaticResource AccentBrush}"
+                            <Border Grid.Row="2" Width="56" Height="3" CornerRadius="2"
                                     HorizontalAlignment="Left"
-                                    Margin="0,14,0,0" />
-                            <TextBlock Text="Acesso administrativo"
-                                       Foreground="#CDBFAE"
-                                       FontSize="16"
-                                       Margin="0,16,0,0" />
-                        </StackPanel>
-
-                        <TextBlock Grid.Row="1"
-                                   Text="Desktop Windows"
-                                   Foreground="#9C8D7A"
-                                   FontSize="13" />
+                                    Background="{StaticResource SparkAccentBarBrush}" />
+                        </Grid>
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="1"
-                        CornerRadius="0,16,16,0"
-                        Background="White"
-                        Padding="58,50">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                <!-- DIREITA: formulario -->
+                <Border Grid.Column="1" CornerRadius="0,14,14,0" Background="White" Padding="60,56">
+                    <StackPanel x:Name="FormPanel" Width="380" VerticalAlignment="Center"
+                                Opacity="0" RenderTransformOrigin="0.5,0.5">
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform Y="14" />
+                        </StackPanel.RenderTransform>
 
-                        <StackPanel Width="390" VerticalAlignment="Center">
-                            <TextBlock Text="Entrar"
-                                       Foreground="{StaticResource InkBrush}"
-                                       FontSize="30"
-                                       FontWeight="SemiBold" />
-                            <TextBlock Text="Use seu e-mail e senha cadastrados."
-                                       Foreground="{StaticResource MutedBrush}"
-                                       FontSize="14"
-                                       Margin="0,8,0,30" />
+                        <TextBlock Text="Entrar"
+                                   Foreground="{StaticResource SparkInkBrush}"
+                                   FontSize="30" FontWeight="Bold" />
+                        <TextBlock Text="Use seu e-mail e senha cadastrados."
+                                   Foreground="{StaticResource SparkMutedBrush}"
+                                   FontSize="14"
+                                   Margin="0,8,0,34" />
 
-                            <TextBlock Text="E-mail" Style="{StaticResource LabelStyle}" />
-                            <TextBox x:Name="EmailTextBox"
-                                     Style="{StaticResource FieldTextBoxStyle}"
-                                     Margin="0,0,0,18" />
+                        <!-- E-mail -->
+                        <TextBlock Text="E-mail" Style="{StaticResource SparkFieldLabelStyle}" />
+                        <Grid Margin="0,0,0,22">
+                            <TextBox x:Name="EmailTextBox" Style="{StaticResource SparkIconTextBoxStyle}" />
+                            <Path Data="M2,4 L22,4 L22,20 L2,20 Z M2,7 L12,13.5 L22,7"
+                                  Stroke="{StaticResource SparkFaintBrush}" StrokeThickness="2"
+                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="17" Height="17" Stretch="Uniform"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                                  Margin="15,0,0,0" IsHitTestVisible="False" />
+                        </Grid>
 
-                            <TextBlock Text="Senha" Style="{StaticResource LabelStyle}" />
-                            <PasswordBox x:Name="PasswordBox"
-                                         Style="{StaticResource FieldPasswordBoxStyle}"
-                                         Margin="0,0,0,24" />
+                        <!-- Senha -->
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Senha" Style="{StaticResource SparkFieldLabelStyle}" Margin="0" HorizontalAlignment="Left" />
+                            <Button x:Name="ForgotPasswordButton"
+                                    Content="Esqueceu?"
+                                    Style="{StaticResource SparkLinkButtonStyle}"
+                                    FontSize="12" FontWeight="SemiBold"
+                                    HorizontalAlignment="Right"
+                                    Click="ForgotPasswordButton_Click" />
+                        </Grid>
+                        <Grid Margin="0,0,0,28">
+                            <PasswordBox x:Name="PasswordBox" Style="{StaticResource SparkIconPasswordBoxStyle}" />
+                            <TextBox x:Name="PasswordRevealTextBox"
+                                     Style="{StaticResource SparkIconTextBoxStyle}"
+                                     Padding="42,0,44,0"
+                                     Visibility="Collapsed" />
+                            <Path Data="M5,11 L19,11 L19,21 L5,21 Z M8,11 L8,7 A4,4 0 0 1 16,7 L16,11"
+                                  Stroke="{StaticResource SparkFaintBrush}" StrokeThickness="2"
+                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="17" Height="17" Stretch="Uniform"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                                  Margin="15,0,0,0" IsHitTestVisible="False" />
+                            <Button x:Name="TogglePasswordButton"
+                                    Style="{StaticResource SparkEyeButtonStyle}"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Margin="0,0,8,0"
+                                    Click="TogglePasswordButton_Click">
+                                <Grid>
+                                    <Path x:Name="EyeIcon"
+                                          Data="M1,12 C4,5.5 20,5.5 23,12 C20,18.5 4,18.5 1,12 Z M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12"
+                                          Stroke="#B3ACA4" StrokeThickness="2"
+                                          StrokeLineJoin="Round"
+                                          Width="17" Height="17" Stretch="Uniform" />
+                                    <Path x:Name="EyeOffIcon"
+                                          Data="M1,12 C4,5.5 20,5.5 23,12 C20,18.5 4,18.5 1,12 Z M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M4,3 L20,21"
+                                          Stroke="#78716C" StrokeThickness="2"
+                                          StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Width="17" Height="17" Stretch="Uniform"
+                                          Visibility="Collapsed" />
+                                </Grid>
+                            </Button>
+                        </Grid>
 
-                            <Button x:Name="LoginButton"
-                                    Content="Entrar"
-                                    Style="{StaticResource PrimaryButtonStyle}"
-                                    Click="LoginButton_Click" />
+                        <Button x:Name="LoginButton"
+                                Content="Entrar"
+                                Style="{StaticResource SparkHeroButtonStyle}"
+                                Click="LoginButton_Click" />
 
-                            <Button Content="Criar conta"
-                                    Height="42"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Foreground="{StaticResource AccentBrush}"
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Cursor="Hand"
-                                    Margin="0,12,0,0"
-                                    Click="CreateAccountButton_Click" />
+                        <TextBlock HorizontalAlignment="Center" Margin="0,22,0,0" FontSize="13.5"
+                                   Foreground="{StaticResource SparkMutedBrush}">
+                            <Run Text="Não tem uma conta?" />
+                            <Hyperlink Click="CreateAccountButton_Click"
+                                       Foreground="{StaticResource SparkAccentBrush}"
+                                       FontWeight="Bold"
+                                       TextDecorations="{x:Null}">Criar conta</Hyperlink>
+                        </TextBlock>
 
-                            <Border x:Name="StatusBorder"
-                                    Visibility="Collapsed"
-                                    Background="#FFF6E8"
-                                    BorderBrush="#F2D9B8"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Padding="14"
-                                    Margin="0,18,0,0">
-                                <TextBlock x:Name="StatusTextBlock"
-                                           Foreground="{StaticResource InkBrush}"
-                                           FontSize="13"
-                                           TextWrapping="Wrap" />
-                            </Border>
-                        </StackPanel>
+                        <Border x:Name="StatusBorder"
+                                Visibility="Collapsed"
+                                Background="#FDF3EA"
+                                BorderBrush="#F7E0CC"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="14"
+                                Margin="0,18,0,0">
+                            <TextBlock x:Name="StatusTextBlock"
+                                       Foreground="{StaticResource SparkAccentTextBrush}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap" />
+                        </Border>
 
-                        <TextBlock x:Name="ApiInfoTextBlock"
-                                   Grid.Row="1"
-                                   Foreground="{StaticResource MutedBrush}"
-                                   FontSize="12"
-                                   HorizontalAlignment="Right" />
-                    </Grid>
+                        <!-- Rodape -->
+                        <Border BorderBrush="#F4EFEA" BorderThickness="0,1,0,0"
+                                Padding="0,20,0,0" Margin="0,36,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Ellipse x:Name="ConnectionDot" Width="6" Height="6"
+                                         Fill="#C4BDB5" VerticalAlignment="Center">
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="ConnectionDotGlow" Color="#C4BDB5" BlurRadius="6" ShadowDepth="0" Opacity="0.9" />
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                                <TextBlock x:Name="ConnectionStatusTextBlock" Text="Verificando..."
+                                           Foreground="{StaticResource SparkFaintBrush}"
+                                           FontSize="11.5" Margin="5,0,0,0" />
+                                <TextBlock Text="·" Foreground="#E6E0DA" FontSize="11.5" Margin="7,0" />
+                                <TextBlock FontSize="11.5" Foreground="{StaticResource SparkFaintBrush}">
+                                    <Run Text="Feito com" />
+                                    <Run Text="♥" Foreground="{StaticResource SparkAccentBrush}" />
+                                    <Run Text="pela Sparkware" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </Border>
             </Grid>
         </Border>
 
-        <TextBlock Text="Feito com ❤️ pela Sparkware"
+        <TextBlock x:Name="ApiInfoTextBlock"
                    Foreground="#8A7C6C"
-                   Opacity="0.58"
+                   Opacity="0.7"
                    FontSize="11"
                    HorizontalAlignment="Right"
                    VerticalAlignment="Bottom"
-                   Margin="0,0,12,8"
-                   IsHitTestVisible="False" />
+                   Margin="0,0,2,-22" />
     </Grid>
+
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="Window.Loaded">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="GreetingPanel"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.7" BeginTime="0:0:0.1" />
+                    <DoubleAnimation Storyboard.TargetName="GreetingPanel"
+                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                     From="14" To="0" Duration="0:0:0.7" BeginTime="0:0:0.1">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="FormPanel"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.6" />
+                    <DoubleAnimation Storyboard.TargetName="FormPanel"
+                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                     From="14" To="0" Duration="0:0:0.6">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="HologramStage"
+                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                     From="0" To="-12" Duration="0:0:3.8"
+                                     AutoReverse="True"
+                                     RepeatBehavior="Forever">
+                        <DoubleAnimation.EasingFunction>
+                            <SineEase EasingMode="EaseInOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="HologramPulse"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0.45" To="0.95" Duration="0:0:2.4"
+                                     AutoReverse="True"
+                                     RepeatBehavior="Forever" />
+                    <DoubleAnimation Storyboard.TargetName="HologramHeadSkew"
+                                     Storyboard.TargetProperty="AngleY"
+                                     From="-2.6" To="2.6" Duration="0:0:4.8"
+                                     AutoReverse="True"
+                                     RepeatBehavior="Forever">
+                        <DoubleAnimation.EasingFunction>
+                            <SineEase EasingMode="EaseInOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="HologramHeadScale"
+                                     Storyboard.TargetProperty="ScaleX"
+                                     From="0.985" To="1.015" Duration="0:0:4.8"
+                                     AutoReverse="True"
+                                     RepeatBehavior="Forever">
+                        <DoubleAnimation.EasingFunction>
+                            <SineEase EasingMode="EaseInOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="HologramScanlines"
+                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                     From="0" To="8" Duration="0:0:1.4"
+                                     RepeatBehavior="Forever" />
+                    <DoubleAnimation Storyboard.TargetName="HologramScanlines"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0.5" To="0.75" Duration="0:0:4"
+                                     AutoReverse="True"
+                                     RepeatBehavior="Forever" />
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </Window.Triggers>
 </Window>

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @keyframes scIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-14px); }
+    }
+
+    @keyframes scScan {
+      from { background-position: 0 0; }
+      to { background-position: 0 8px; }
+    }
+
+    @keyframes scHoloFlicker {
+      0%, 100% { opacity: .6; }
+      48% { opacity: .5; }
+      50% { opacity: .75; }
+      52% { opacity: .55; }
+    }
+
+    .stage {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      animation: scIn .7s ease both;
+    }
+
+    .holo {
+      position: relative;
+      width: 300px;
+      height: 322px;
+      animation: scFloat 5.5s ease-in-out infinite;
+    }
+
+    .cone {
+      position: absolute;
+      left: 50%;
+      top: 24px;
+      bottom: 30px;
+      width: 70%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, rgba(247,147,30,.16), rgba(247,147,30,.02));
+      clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%);
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    .floor {
+      position: absolute;
+      left: 50%;
+      bottom: 6px;
+      width: 230px;
+      height: 56px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(247,147,30,.4), transparent 68%);
+      filter: blur(5px);
+    }
+
+    #sc-holo {
+      position: relative;
+      z-index: 1;
+      width: 300px;
+      height: 322px;
+      display: block;
+    }
+
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255,205,150,.12) 0px,
+        rgba(255,205,150,.12) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      mix-blend-mode: screen;
+      animation: scScan 1.4s linear infinite, scHoloFlicker 4s ease-in-out infinite;
+    }
+
+    .ring-main {
+      position: absolute;
+      left: 50%;
+      bottom: 4px;
+      z-index: 3;
+      width: 186px;
+      height: 28px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      border: 1px solid rgba(247,147,30,.55);
+      box-shadow: 0 0 22px rgba(247,147,30,.4), inset 0 0 14px rgba(247,147,30,.3);
+    }
+
+    .ring-inner {
+      position: absolute;
+      left: 50%;
+      bottom: 11px;
+      z-index: 3;
+      width: 120px;
+      height: 16px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      border: 1px solid rgba(247,147,30,.3);
+    }
+
+    h1 {
+      margin: 14px 0 0;
+      font: 700 26px/1.15 "Sora", "Segoe UI", system-ui, sans-serif;
+      color: #fff;
+      letter-spacing: -.5px;
+      text-shadow: 0 2px 20px rgba(0,0,0,.4);
+    }
+
+    p {
+      margin: 10px 0 0;
+      max-width: 280px;
+      font: 400 13.5px/1.6 "Inter", "Segoe UI", system-ui, sans-serif;
+      color: rgba(255,255,255,.6);
+      text-shadow: 0 1px 12px rgba(0,0,0,.4);
+    }
+
+    .fallback-head {
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      top: 42px;
+      width: 170px;
+      height: 214px;
+      transform: translateX(-50%);
+      opacity: .45;
+      border: 1px solid rgba(251,165,59,.8);
+      border-radius: 46% 46% 42% 42% / 32% 32% 58% 58%;
+      box-shadow: 0 0 28px rgba(247,147,30,.48), inset 0 0 28px rgba(247,147,30,.18);
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <section class="holo" aria-hidden="true">
+      <div class="cone"></div>
+      <div class="floor"></div>
+      <div class="fallback-head"></div>
+      <canvas id="sc-holo"></canvas>
+      <div class="scanlines"></div>
+      <div class="ring-main"></div>
+      <div class="ring-inner"></div>
+    </section>
+    <h1>Bom te ver por aqui.</h1>
+    <p>Sua agenda organizada, do jeito que a clinica precisa.</p>
+  </main>
+
+  <script src="hologram/three.js"></script>
+  <script src="hologram/GLTFLoader.js"></script>
+  <script>
+    (function () {
+      let attempts = 0;
+      let raf = 0;
+
+      function tryHolo() {
+        if (!(window.THREE && window.THREE.GLTFLoader)) {
+          if (attempts++ < 150) window.setTimeout(tryHolo, 120);
+          return;
+        }
+        initHolo();
+      }
+
+      function initHolo() {
+        const T = window.THREE;
+        const canvas = document.getElementById("sc-holo");
+        if (!canvas || canvas._inited) return;
+        canvas._inited = true;
+
+        const w = canvas.clientWidth || 300;
+        const h = canvas.clientHeight || 322;
+        const renderer = new T.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(w, h, false);
+
+        const scene = new T.Scene();
+        const camera = new T.PerspectiveCamera(34, w / h, 0.1, 100);
+        camera.position.set(0, 0, 7);
+
+        const group = new T.Group();
+        group.rotation.x = -0.08;
+        scene.add(group);
+
+        new T.GLTFLoader().load(
+          "hologram/LeePerrySmith.glb",
+          function (gltf) {
+            let geo = null;
+            gltf.scene.traverse(function (o) {
+              if (o.isMesh && !geo) geo = o.geometry;
+            });
+            if (!geo) return;
+
+            geo = geo.clone();
+            geo.center();
+            geo.computeBoundingBox();
+            const s = 3.5 / (geo.boundingBox.max.y - geo.boundingBox.min.y);
+
+            const wire = new T.Mesh(
+              geo,
+              new T.MeshBasicMaterial({
+                color: 0xf7931e,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.22
+              })
+            );
+            const pts = new T.Points(
+              geo,
+              new T.PointsMaterial({
+                color: 0xffca8a,
+                size: 1.7,
+                sizeAttenuation: false,
+                transparent: true,
+                opacity: 0.9
+              })
+            );
+
+            group.add(wire);
+            group.add(pts);
+            group.scale.setScalar(s);
+
+            const fallback = document.querySelector(".fallback-head");
+            if (fallback) fallback.style.display = "none";
+          },
+          undefined,
+          function () {
+            canvas._inited = false;
+          }
+        );
+
+        function animate() {
+          raf = window.requestAnimationFrame(animate);
+          group.rotation.y += 0.008;
+          group.position.y = Math.sin(Date.now() * 0.0012) * 0.12;
+          renderer.render(scene, camera);
+        }
+
+        animate();
+        window.addEventListener("beforeunload", function () {
+          if (raf) window.cancelAnimationFrame(raf);
+        });
+      }
+
+      tryHolo();
+    })();
+  </script>
+</body>
+</html>
