@@ -20,6 +20,16 @@ internal sealed class ClienteWorkflowService
         return _workspaceService.LoadClientesAsync();
     }
 
+    public Task<List<Cliente>> SearchAsync(string term, int take = 50)
+    {
+        return _workspaceService.SearchClientesAsync(term, take);
+    }
+
+    public Task<Cliente?> FindByIdLocalAsync(string idLocal)
+    {
+        return _workspaceService.FindClienteByIdLocalAsync(idLocal);
+    }
+
     public async Task SaveAsync(Cliente cliente)
     {
         var validation = ClienteValidator.Validate(cliente);
@@ -40,7 +50,10 @@ internal sealed class ClienteWorkflowService
             return true;
 
         return Contains(cliente.Nome, term)
+            || Contains(cliente.Empresa, term)
+            || Contains(cliente.Cargo, term)
             || Contains(cliente.Cpf, term)
+            || Contains(cliente.Rg, term)
             || Contains(cliente.Email, term)
             || Contains(cliente.Telefone, term)
             || Contains(cliente.Status, term);

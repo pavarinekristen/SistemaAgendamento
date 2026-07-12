@@ -2,6 +2,7 @@ using AgendamentoWpfApp.Models;
 using AgendamentoWpfApp.Services;
 using AgendamentoWpfApp.Services.Validation;
 using Microsoft.Data.Sqlite;
+using PdfSharpCore.Pdf.IO;
 
 var tempFolder = Path.Combine(Path.GetTempPath(), "SparkCoreUnitTests", Guid.NewGuid().ToString("N"));
 var databasePath = Path.Combine(tempFolder, "agenda-tests.sqlite");
@@ -10,6 +11,7 @@ try
 {
     RunValidatorTests();
     await RunWorkflowTestsAsync(databasePath);
+    RunLaudoPdfTests();
 
     Console.WriteLine("Testes unitarios concluidos com sucesso.");
     return 0;
@@ -27,6 +29,58 @@ finally
     {
         Console.WriteLine($"Aviso: nao foi possivel remover pasta temporaria {tempFolder}.");
     }
+}
+
+static void RunLaudoPdfTests()
+{
+    var service = new LaudoPdfService();
+    var cliente = new Cliente
+    {
+        Nome = "Cliente Laudo",
+        Empresa = "Empresa Laudo",
+        Cargo = "Vigilante",
+        Cpf = "12345678909",
+        Status = "Ativo"
+    };
+
+    var semArma = new Consulta
+    {
+        ClienteIdLocal = cliente.IdLocal,
+        ClienteNome = cliente.Nome,
+        Empresa = cliente.Empresa,
+        ClienteCargo = cliente.Cargo,
+        DataConsulta = DateTime.Today,
+        Horario = "08:00",
+        Local = "Empresa",
+        Motivo = "Admissao",
+        TrabalhaArmado = false
+    };
+
+    var comArma = new Consulta
+    {
+        ClienteIdLocal = cliente.IdLocal,
+        ClienteNome = cliente.Nome,
+        Empresa = cliente.Empresa,
+        ClienteCargo = cliente.Cargo,
+        DataConsulta = DateTime.Today,
+        Horario = "09:00",
+        Local = "Empresa",
+        Motivo = "Admissao",
+        TrabalhaArmado = true
+    };
+
+    var semArmaPath = service.GerarLaudo(cliente, semArma);
+    var comArmaPath = service.GerarLaudo(cliente, comArma);
+
+    Assert(File.Exists(semArmaPath), "Laudo sem arma nao foi gerado.");
+    Assert(File.Exists(comArmaPath), "Laudo com arma nao foi gerado.");
+    Assert(Path.GetFileName(semArmaPath).Contains("SemArma"), "Nome do laudo sem arma nao indica o tipo.");
+    Assert(Path.GetFileName(comArmaPath).Contains("ComArma"), "Nome do laudo com arma nao indica o tipo.");
+
+    using var semArmaPdf = PdfReader.Open(semArmaPath, PdfDocumentOpenMode.ReadOnly);
+    using var comArmaPdf = PdfReader.Open(comArmaPath, PdfDocumentOpenMode.ReadOnly);
+    Assert(semArmaPdf.PageCount == 1, "Laudo sem arma deve conter uma pagina.");
+    Assert(comArmaPdf.PageCount == 1, "Laudo com arma deve conter uma pagina.");
 }
 
 static void RunValidatorTests()
@@ -55,12 +109,13 @@ static void RunValidatorTests()
         ClienteIdLocal = "",
         DataConsulta = DateTime.Today.AddDays(-1),
         Horario = "",
+        Motivo = "",
         Local = ""
     };
     var consultaValidation = ConsultaValidator.Validate(consultaInvalida);
     Assert(!consultaValidation.IsValid, "Consulta invalida foi aceita.");
     Assert(consultaValidation.Message.Contains("Selecione um cliente"), "Erro de cliente da consulta nao retornado.");
-    Assert(consultaValidation.Message.Contains("data passada"), "Erro de data passada nao retornado.");
+    Assert(consultaValidation.Message.Contains("Selecione o motivo"), "Erro de motivo da consulta nao retornado.");
 
     var profissionalInvalido = new ProfissionalSala
     {
@@ -85,6 +140,8 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     var cliente = new Cliente
     {
         Nome = "Cliente Workflow",
+        Empresa = "Empresa Teste",
+        Cargo = "Vigilante",
         Cpf = "123.456.789-09",
         Email = "cliente.workflow@example.com",
         Telefone = "(11) 99999-9999",
@@ -100,12 +157,15 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     var duplicado = new Cliente
     {
         Nome = "Cliente Duplicado",
+        Empresa = "Empresa Teste",
+        Cargo = "Vigilante",
         Cpf = "12345678909",
         Status = "Ativo"
     };
-    await AssertThrowsAsync<InvalidOperationException>(
-        () => clienteWorkflow.SaveAsync(duplicado),
-        "CPF duplicado nao foi bloqueado pelo workflow.");
+    await clienteWorkflow.SaveAsync(duplicado);
+
+    clientes = await clienteWorkflow.LoadAsync();
+    Assert(clientes.Count == 2, "CPF duplicado deve ser permitido para dados legados.");
 
     var sala1 = new ProfissionalSala
     {
@@ -179,7 +239,7 @@ static async Task RunWorkflowTestsAsync(string databasePath)
 
     await clienteWorkflow.DeleteAsync(salvo);
     clientes = await clienteWorkflow.LoadAsync();
-    Assert(clientes.Count == 0, "Delete de cliente pelo workflow falhou.");
+    Assert(clientes.Count == 1, "Delete de cliente pelo workflow falhou.");
 }
 
 static void Assert(bool condition, string message)

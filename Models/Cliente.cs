@@ -25,6 +25,30 @@ internal sealed class Cliente
     [MaxLength(180)]
     public string Email { get; set; } = string.Empty;
 
+    [MaxLength(160)]
+    public string Empresa { get; set; } = string.Empty;
+
+    [MaxLength(80)]
+    public string Escolaridade { get; set; } = string.Empty;
+
+    [MaxLength(120)]
+    public string Cargo { get; set; } = string.Empty;
+
+    [MaxLength(40)]
+    public string EstadoCivil { get; set; } = string.Empty;
+
+    [MaxLength(120)]
+    public string Naturalidade { get; set; } = string.Empty;
+
+    [MaxLength(30)]
+    public string Rg { get; set; } = string.Empty;
+
+    [MaxLength(20)]
+    public string Sexo { get; set; } = string.Empty;
+
+    [MaxLength(20)]
+    public string TipoEndereco { get; set; } = "Particular";
+
     [MaxLength(11)]
     public string Telefone { get; set; } = string.Empty;
 
@@ -65,6 +89,9 @@ internal sealed class Cliente
 
     [NotMapped]
     public string TelefoneFormatado => InputNormalizer.FormatTelefone(Telefone);
+
+    [NotMapped]
+    public string IdTexto => Id > 0 ? Id.ToString("0000") : "-";
 
     [NotMapped]
     public string DataAgendamentoTexto => DataAgendamento?.ToString("dd/MM/yyyy") ?? "";

@@ -14,18 +14,21 @@ internal sealed class AgendaViewModel : ViewModelBase
     private readonly Action _dateChanged;
     private readonly Action _selectionChanged;
     private bool _suppressDateChanged;
-    private IEnumerable? _clientesSource;
+    private IEnumerable? _clienteCandidatesSource;
     private IEnumerable? _profissionaisSource;
     private IEnumerable? _consultasSource;
+    private Cliente? _selectedCliente;
     private Consulta? _selectedConsulta;
     private DateTime? _selectedDate;
     private DateTime? _formDate;
     private string _headerDateText = "";
     private string _countText = "";
-    private string _selectedClienteId = "";
+    private string _clienteSearchTerm = "";
     private string _horario = "";
     private string _local = "";
     private string _selectedProfissionalId = "";
+    private string _motivo = "Admissao";
+    private bool _trabalhaArmado;
     private string _status = "Agendada";
     private string _observacoes = "";
     private string _statusMessage = "";
@@ -45,12 +48,19 @@ internal sealed class AgendaViewModel : ViewModelBase
         DeleteCommand = new RelayCommand(deleteRequested);
     }
 
-    public IReadOnlyList<string> StatusOptions { get; } = new[] { "Agendada", "Aguardando", "Concluida", "Cancelada" };
+    public IReadOnlyList<string> StatusOptions { get; } = new[] { "Agendada", "Aguardando", "Concluida", "Baixado", "Cancelada" };
+    public IReadOnlyList<string> MotivoOptions { get; } = new[] { "Admissao", "Periodico", "Retorno ao trabalho", "Mudanca de funcao", "Demissional" };
 
-    public IEnumerable? ClientesSource
+    public IEnumerable? ClienteCandidatesSource
     {
-        get => _clientesSource;
-        set => SetProperty(ref _clientesSource, value);
+        get => _clienteCandidatesSource;
+        set => SetProperty(ref _clienteCandidatesSource, value);
+    }
+
+    public Cliente? SelectedCliente
+    {
+        get => _selectedCliente;
+        set => SetProperty(ref _selectedCliente, value);
     }
 
     public IEnumerable? ProfissionaisSource
@@ -108,10 +118,10 @@ internal sealed class AgendaViewModel : ViewModelBase
         private set => SetProperty(ref _countText, value);
     }
 
-    public string SelectedClienteId
+    public string ClienteSearchTerm
     {
-        get => _selectedClienteId;
-        set => SetProperty(ref _selectedClienteId, value ?? "");
+        get => _clienteSearchTerm;
+        set => SetProperty(ref _clienteSearchTerm, value ?? "");
     }
 
     public string Horario
@@ -130,6 +140,18 @@ internal sealed class AgendaViewModel : ViewModelBase
     {
         get => _selectedProfissionalId;
         set => SetProperty(ref _selectedProfissionalId, value ?? "");
+    }
+
+    public string Motivo
+    {
+        get => _motivo;
+        set => SetProperty(ref _motivo, string.IsNullOrWhiteSpace(value) ? "Admissao" : value);
+    }
+
+    public bool TrabalhaArmado
+    {
+        get => _trabalhaArmado;
+        set => SetProperty(ref _trabalhaArmado, value);
     }
 
     public string Status
@@ -162,7 +184,7 @@ internal sealed class AgendaViewModel : ViewModelBase
 
     public void RefreshClientes()
     {
-        OnPropertyChanged(nameof(ClientesSource));
+        OnPropertyChanged(nameof(ClienteCandidatesSource));
     }
 
     public void RefreshProfissionais()
@@ -197,10 +219,10 @@ internal sealed class AgendaViewModel : ViewModelBase
         consulta = current ?? new Consulta();
         errorMessage = "";
 
-        var cliente = FindCliente(SelectedClienteId);
+        var cliente = SelectedCliente;
         if (cliente == null)
         {
-            errorMessage = "Selecione um cliente cadastrado.";
+            errorMessage = "Busque e selecione um cliente cadastrado.";
             return false;
         }
 
@@ -218,6 +240,8 @@ internal sealed class AgendaViewModel : ViewModelBase
 
         consulta.ClienteIdLocal = cliente.IdLocal;
         consulta.ClienteNome = cliente.Nome;
+        consulta.Empresa = cliente.Empresa;
+        consulta.ClienteCargo = cliente.Cargo;
         consulta.DataConsulta = FormDate.Value.Date;
         consulta.Horario = horario;
         consulta.Local = Local.Trim();
@@ -234,6 +258,8 @@ internal sealed class AgendaViewModel : ViewModelBase
             consulta.ProfissionalSala = profissionalSala.Nome;
         }
 
+        consulta.Motivo = Motivo;
+        consulta.TrabalhaArmado = TrabalhaArmado;
         consulta.Status = Status;
         consulta.Observacoes = Observacoes.Trim();
         return true;
@@ -247,11 +273,14 @@ internal sealed class AgendaViewModel : ViewModelBase
             return;
         }
 
-        SelectedClienteId = consulta.ClienteIdLocal;
+        SelectedCliente = null;
+        ClienteSearchTerm = consulta.ClienteNome;
         FormDate = consulta.DataConsulta;
         Horario = consulta.Horario;
         Local = consulta.Local;
         SelectedProfissionalId = consulta.ProfissionalSalaIdLocal;
+        Motivo = string.IsNullOrWhiteSpace(consulta.Motivo) ? "Admissao" : consulta.Motivo;
+        TrabalhaArmado = consulta.TrabalhaArmado;
         Status = string.IsNullOrWhiteSpace(consulta.Status) ? "Agendada" : consulta.Status;
         Observacoes = consulta.Observacoes;
         SetStatus("", false);
@@ -259,11 +288,14 @@ internal sealed class AgendaViewModel : ViewModelBase
 
     public void ClearForm(DateTime date)
     {
-        SelectedClienteId = "";
+        SelectedCliente = null;
+        ClienteSearchTerm = "";
         FormDate = date.Date;
         Horario = "";
         Local = "";
         SelectedProfissionalId = "";
+        Motivo = "Admissao";
+        TrabalhaArmado = false;
         Status = "Agendada";
         Observacoes = "";
         SetStatus("", false);
@@ -279,13 +311,6 @@ internal sealed class AgendaViewModel : ViewModelBase
     {
         StatusMessage = message;
         StatusBrush = isError ? SparkPalette.Error : SparkPalette.Success;
-    }
-
-    private Cliente? FindCliente(string idLocal)
-    {
-        return (_clientesSource ?? Array.Empty<object>())
-            .OfType<Cliente>()
-            .FirstOrDefault(c => c.IdLocal == idLocal);
     }
 
     private ProfissionalSala? FindProfissionalSala(string idLocal)

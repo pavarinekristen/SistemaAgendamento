@@ -30,19 +30,13 @@
                 <!-- Cabecalho com marca -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,22">
-                        <Border Width="40" Height="40" CornerRadius="11"
-                                Background="{StaticResource SparkLogoGradientBrush}">
+                        <Border Width="40" Height="40" CornerRadius="11">
                             <Border.Effect>
                                 <DropShadowEffect Color="#E0670A" BlurRadius="18" ShadowDepth="5" Direction="270" Opacity="0.6" />
                             </Border.Effect>
-                            <Grid Width="24" Height="24">
-                                <Ellipse Width="21" Height="21"
-                                         Stroke="#8CFFFFFF" StrokeThickness="1.8"
-                                         StrokeDashArray="6.8,3" StrokeDashCap="Round" />
-                                <Path Data="M17.6,6.8 L10.4,17.2 L14.7,17.2 L13.7,25.2 L21.6,13.8 L17,13.8 Z"
-                                      Fill="White" Stretch="Uniform" Width="9" Height="14"
-                                      HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" />
-                            </Grid>
+                            <Border.Background>
+                                <ImageBrush ImageSource="/Assets/SparkCoreLogo.png" Stretch="UniformToFill" />
+                            </Border.Background>
                         </Border>
                         <TextBlock Text="SparkCore" Foreground="{StaticResource SparkInkBrush}"
                                    FontWeight="Bold" FontSize="17"

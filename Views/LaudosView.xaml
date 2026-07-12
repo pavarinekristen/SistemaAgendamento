@@ -4,212 +4,112 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,24">
-            <TextBlock Text="Laudos e impressão" Style="{StaticResource SparkSectionTitleStyle}" />
-            <TextBlock Text="Modelo exemplo preenchido com dados do cliente e da consulta."
+        <StackPanel Grid.Row="0" Margin="0,0,0,18">
+            <TextBlock Text="Historico de laudos" Style="{StaticResource SparkSectionTitleStyle}" />
+            <TextBlock Text="Filtre por periodo, empresa, funcionario e motivo para baixar ou imprimir os laudos."
                        Style="{StaticResource SparkSubtitleStyle}" />
         </StackPanel>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="400" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1"
+                Style="{StaticResource SparkCardStyle}"
+                Padding="18"
+                Margin="0,0,0,18">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="145" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="145" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="1.2*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="180" />
+                </Grid.ColumnDefinitions>
 
-            <!-- Card de geracao -->
-            <Border Grid.Column="0"
-                    Style="{StaticResource SparkCardStyle}"
-                    Padding="24"
-                    Margin="0,0,22,0"
-                    VerticalAlignment="Top">
                 <StackPanel>
-                    <Label Content="Cliente" />
-                    <ComboBox x:Name="LaudoClienteComboBox"
-                              DisplayMemberPath="Nome"
-                              Style="{StaticResource SparkComboBoxStyle}"
-                              SelectionChanged="LaudoClienteComboBox_SelectionChanged" />
+                    <Label Content="De" />
+                    <DatePicker x:Name="DataInicialDatePicker"
+                                Style="{StaticResource SparkDatePickerStyle}" />
+                </StackPanel>
 
-                    <Label Content="Consulta" Margin="0,16,0,0" />
-                    <ComboBox x:Name="LaudoConsultaComboBox"
-                              DisplayMemberPath="DataHoraTexto"
+                <StackPanel Grid.Column="2">
+                    <Label Content="Ate" />
+                    <DatePicker x:Name="DataFinalDatePicker"
+                                Style="{StaticResource SparkDatePickerStyle}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="4">
+                    <Label Content="Empresa" />
+                    <TextBox x:Name="EmpresaTextBox"
+                             Style="{StaticResource SparkTextBoxStyle}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="6">
+                    <Label Content="Funcionario" />
+                    <TextBox x:Name="FuncionarioTextBox"
+                             Style="{StaticResource SparkTextBoxStyle}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="8">
+                    <Label Content="Motivo" />
+                    <ComboBox x:Name="MotivoComboBox"
                               Style="{StaticResource SparkComboBoxStyle}" />
+                </StackPanel>
 
-                    <Button Style="{StaticResource SparkPrimaryButtonStyle}"
-                            Height="46"
-                            HorizontalAlignment="Left"
-                            Margin="0,22,0,0"
-                            Click="GerarPdfExemploButton_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="M6,9 L6,2 L18,2 L18,9 M6,18 L4,18 C2.9,18 2,17.1 2,16 L2,11 C2,9.9 2.9,9 4,9 L20,9 C21.1,9 22,9.9 22,11 L22,16 C22,17.1 21.1,18 20,18 L18,18 M6,14 L18,14 L18,22 L6,22 Z"
-                                  Stroke="White" StrokeThickness="2"
-                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                  Width="17" Height="17" Stretch="Uniform"
-                                  VerticalAlignment="Center" Margin="0,0,9,0" />
-                            <TextBlock Text="Gerar PDF exemplo" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
+                <WrapPanel Grid.Row="1"
+                           Grid.ColumnSpan="9"
+                           Margin="0,16,0,0"
+                           VerticalAlignment="Bottom">
+                    <Button Content="Filtrar"
+                            Style="{StaticResource SparkPrimaryButtonStyle}"
+                            Click="FiltrarButton_Click" />
+                    <Button Content="Baixar laudo"
+                            Style="{StaticResource SparkSecondaryButtonStyle}"
+                            Margin="10,0,0,0"
+                            Click="BaixarLaudoButton_Click" />
+                    <Button Content="Imprimir lista"
+                            Style="{StaticResource SparkSecondaryButtonStyle}"
+                            Margin="10,0,0,0"
+                            Click="ImprimirButton_Click" />
+                    <Button Content="Excluir"
+                            Style="{StaticResource SparkDangerButtonStyle}"
+                            Margin="10,0,0,0"
+                            Click="ExcluirButton_Click" />
                     <TextBlock x:Name="LaudoStatusTextBlock"
                                Foreground="{StaticResource SparkMutedBrush}"
                                FontSize="12"
                                TextWrapping="Wrap"
-                               Margin="0,14,0,0" />
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0" />
+                </WrapPanel>
+            </Grid>
+        </Border>
 
-                    <Border Background="{StaticResource SparkSurfaceBrush}"
-                            BorderBrush="{StaticResource SparkLineBrush}"
-                            BorderThickness="1"
-                            CornerRadius="11"
-                            Padding="14"
-                            Margin="0,20,0,0">
-                        <TextBlock Text="Quando o PDF padrão final existir, esta mesma tela passa a usar o modelo oficial."
-                                   Foreground="#8A8378"
-                                   FontSize="12.5"
-                                   LineHeight="20"
-                                   TextWrapping="Wrap" />
-                    </Border>
-                </StackPanel>
-            </Border>
-
-            <!-- Pre-visualizacao do documento -->
-            <Border Grid.Column="1"
-                    Background="{StaticResource SparkSurfaceBrush}"
-                    BorderBrush="{StaticResource SparkLineBrush}"
-                    BorderThickness="1"
-                    CornerRadius="16"
-                    Padding="28"
-                    VerticalAlignment="Top">
-                <StackPanel>
-                    <TextBlock Text="MODELO EXEMPLO — PRÉ-VISUALIZAÇÃO"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource SparkFaintBrush}"
-                               Margin="0,0,0,14" />
-
-                    <!-- Folha -->
-                    <Border Background="White"
-                            BorderBrush="#EAE3D9"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="44,40"
-                            MaxWidth="640"
-                            HorizontalAlignment="Center">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#1E140A" BlurRadius="40" ShadowDepth="14" Direction="270" Opacity="0.22" />
-                        </Border.Effect>
-                        <StackPanel>
-                            <!-- Timbre -->
-                            <Border BorderBrush="{StaticResource SparkAccentBrush}"
-                                    BorderThickness="0,0,0,2"
-                                    Padding="0,0,0,18">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Width="38" Height="38" CornerRadius="10"
-                                                Background="{StaticResource SparkLogoGradientBrush}">
-                                            <Grid Width="23" Height="23">
-                                                <Ellipse Width="20" Height="20"
-                                                         Stroke="#8CFFFFFF" StrokeThickness="1.8"
-                                                         StrokeDashArray="6.5,3" StrokeDashCap="Round" />
-                                                <Path Data="M17.6,6.8 L10.4,17.2 L14.7,17.2 L13.7,25.2 L21.6,13.8 L17,13.8 Z"
-                                                      Fill="White" Stretch="Uniform" Width="9" Height="13"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" />
-                                            </Grid>
-                                        </Border>
-                                        <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
-                                            <TextBlock Text="SPARKCORE" FontSize="15" FontWeight="ExtraBold" />
-                                            <TextBlock Text="LAUDO / RELATÓRIO DE ATENDIMENTO"
-                                                       FontSize="10" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource SparkMutedBrush}" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Top"
-                                               TextAlignment="Right"
-                                               FontSize="10"
-                                               Foreground="{StaticResource SparkFaintBrush}"
-                                               Text="Nº — &#10;— / — / —" />
-                                </Grid>
-                            </Border>
-
-                            <!-- Campos -->
-                            <Grid Margin="0,22,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="24" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="14" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <StackPanel Grid.Row="0" Grid.Column="0">
-                                    <TextBlock Text="CLIENTE" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SparkFaintBrush}" />
-                                    <Border BorderBrush="#EFE9E0" BorderThickness="0,0,0,1" Padding="0,2,0,5">
-                                        <TextBlock Text="Preenchido pelo cadastro" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource SparkTextBrush}" />
-                                    </Border>
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="2">
-                                    <TextBlock Text="CPF" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SparkFaintBrush}" />
-                                    <Border BorderBrush="#EFE9E0" BorderThickness="0,0,0,1" Padding="0,2,0,5">
-                                        <TextBlock Text="Preenchido pelo cadastro" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource SparkTextBrush}" />
-                                    </Border>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="0">
-                                    <TextBlock Text="DATA / HORÁRIO" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SparkFaintBrush}" />
-                                    <Border BorderBrush="#EFE9E0" BorderThickness="0,0,0,1" Padding="0,2,0,5">
-                                        <TextBlock Text="Preenchido pela consulta" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource SparkTextBrush}" />
-                                    </Border>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="2">
-                                    <TextBlock Text="PROFISSIONAL / SALA" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SparkFaintBrush}" />
-                                    <Border BorderBrush="#EFE9E0" BorderThickness="0,0,0,1" Padding="0,2,0,5">
-                                        <TextBlock Text="Preenchido pela consulta" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource SparkTextBrush}" />
-                                    </Border>
-                                </StackPanel>
-                            </Grid>
-
-                            <!-- Observacoes (skeleton) -->
-                            <TextBlock Text="OBSERVAÇÕES" FontSize="9" FontWeight="SemiBold"
-                                       Foreground="{StaticResource SparkFaintBrush}"
-                                       Margin="0,22,0,6" />
-                            <Border Height="8" Background="#F4EFE8" CornerRadius="4" Margin="0,0,0,8" />
-                            <Border Height="8" Background="#F4EFE8" CornerRadius="4" Margin="0,0,0,8" HorizontalAlignment="Stretch">
-                                <Border.RenderTransform>
-                                    <ScaleTransform ScaleX="0.92" />
-                                </Border.RenderTransform>
-                            </Border>
-                            <Border Height="8" Background="#F4EFE8" CornerRadius="4" Width="280" HorizontalAlignment="Left" />
-
-                            <!-- Assinatura -->
-                            <Grid Margin="0,34,0,0">
-                                <StackPanel HorizontalAlignment="Left">
-                                    <Border Width="180" BorderBrush="{StaticResource SparkTextBrush}" BorderThickness="0,1,0,0" Padding="0,5,0,0">
-                                        <TextBlock Text="Assinatura do profissional"
-                                                   FontSize="10"
-                                                   Foreground="#8A8378"
-                                                   HorizontalAlignment="Center" />
-                                    </Border>
-                                </StackPanel>
-                                <TextBlock Text="Gerado por SparkCore"
-                                           FontSize="9"
-                                           Foreground="{StaticResource SparkFaintBrush}"
-                                           HorizontalAlignment="Right"
-                                           VerticalAlignment="Bottom" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Campos preenchidos automaticamente: cliente, CPF, telefone, e-mail, data, horário, local, profissional/sala e observações."
-                               FontSize="12"
-                               Foreground="{StaticResource SparkMutedBrush}"
-                               HorizontalAlignment="Center"
-                               TextWrapping="Wrap"
-                               Margin="0,16,0,0" />
-                </StackPanel>
-            </Border>
-        </Grid>
+        <Border Grid.Row="2" Style="{StaticResource SparkCardStyle}" Padding="6">
+            <DataGrid x:Name="LaudosDataGrid"
+                      Style="{StaticResource SparkDataGridStyle}"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="DATA" Binding="{Binding DataTexto}" Width="95" />
+                    <DataGridTextColumn Header="HORARIO" Binding="{Binding Horario}" Width="90" />
+                    <DataGridTextColumn Header="FUNCIONARIO" Binding="{Binding ClienteNome}" Width="1.4*" />
+                    <DataGridTextColumn Header="EMPRESA" Binding="{Binding Empresa}" Width="1.2*" />
+                    <DataGridTextColumn Header="CARGO" Binding="{Binding ClienteCargo}" Width="1.1*" />
+                    <DataGridTextColumn Header="MOTIVO" Binding="{Binding Motivo}" Width="130" />
+                    <DataGridTextColumn Header="LAUDO" Binding="{Binding TipoLaudo}" Width="100" />
+                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="110" />
+                    <DataGridTextColumn Header="OBS" Binding="{Binding Observacoes}" Width="1.3*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
     </Grid>
 </UserControl>

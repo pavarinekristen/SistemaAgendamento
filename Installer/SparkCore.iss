@@ -2,7 +2,7 @@
   #define AppName "SparkCore"
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.0.2"
+  #define AppVersion "1.0.4"
 #endif
 #ifndef AppPublisher
   #define AppPublisher "Sparkware"
@@ -14,10 +14,10 @@
   #define AppIcon "..\Assets\SparkCore.ico"
 #endif
 #ifndef SourceDir
-  #define SourceDir "C:\tmp\AgendamentoWpfApp-selfcontained-test"
+  #define SourceDir "..\artifacts\installer\publish"
 #endif
 #ifndef OutputDir
-  #define OutputDir "C:\Users\krist\AgendamentoWpfApp\artifacts\installer"
+  #define OutputDir "..\artifacts\installer"
 #endif
 
 [Setup]
@@ -26,6 +26,8 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
+VersionInfoVersion={#AppVersion}
+VersionInfoProductVersion={#AppVersion}
 DefaultDirName={localappdata}\Programs\SparkCore
 DefaultGroupName=SparkCore
 AllowNoIcons=yes

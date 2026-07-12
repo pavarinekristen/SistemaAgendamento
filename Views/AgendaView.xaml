@@ -109,6 +109,9 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
+                            <DataGridTextColumn Header="EMPRESA" Binding="{Binding Empresa}" Width="1.1*" />
+                            <DataGridTextColumn Header="MOTIVO" Binding="{Binding Motivo}" Width="120" />
+                            <DataGridTextColumn Header="LAUDO" Binding="{Binding TipoLaudo}" Width="100" />
                             <DataGridTextColumn Header="LOCAL" Binding="{Binding Local}" Width="*" />
                             <DataGridTextColumn Header="PROFISSIONAL/SALA" Binding="{Binding ProfissionalSala}" Width="1.2*" />
                             <DataGridTemplateColumn Header="STATUS" Width="120">
@@ -167,11 +170,24 @@
 
                         <StackPanel>
                             <Label Content="Cliente cadastrado" />
-                            <ComboBox ItemsSource="{Binding ClientesSource}"
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="86" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ClienteSearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SparkTextBoxStyle}" />
+                                <Button Grid.Column="2"
+                                        Content="Buscar"
+                                        Style="{StaticResource SparkSecondaryButtonStyle}"
+                                        Click="ClienteSearchButton_Click" />
+                            </Grid>
+                            <ComboBox ItemsSource="{Binding ClienteCandidatesSource}"
                                       DisplayMemberPath="Nome"
-                                      SelectedValuePath="IdLocal"
-                                      SelectedValue="{Binding SelectedClienteId, Mode=TwoWay}"
-                                      Style="{StaticResource SparkComboBoxStyle}" />
+                                      SelectedItem="{Binding SelectedCliente, Mode=TwoWay}"
+                                      Style="{StaticResource SparkComboBoxStyle}"
+                                      Margin="0,8,0,0" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
@@ -218,6 +234,33 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <Label Content="Motivo" />
+                                    <ComboBox ItemsSource="{Binding MotivoOptions}"
+                                              SelectedItem="{Binding Motivo, Mode=TwoWay}"
+                                              Style="{StaticResource SparkComboBoxStyle}" />
+                                </StackPanel>
+                                <CheckBox Grid.Column="2"
+                                          Content="Trabalha armado"
+                                          IsChecked="{Binding TrabalhaArmado, Mode=TwoWay}"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,0,0,12" />
+                                <TextBlock Grid.Column="4"
+                                           Text="Sem arma usa o modelo da pagina 1; com arma usa o modelo da pagina 2."
+                                           Foreground="{StaticResource SparkMutedBrush}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Bottom"
+                                           Margin="0,0,0,8" />
+                            </Grid>
                             <Label Content="Observações" />
                             <TextBox Text="{Binding Observacoes, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource SparkTextAreaStyle}"

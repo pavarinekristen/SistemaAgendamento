@@ -51,9 +51,9 @@ internal sealed class AgendaDbContext : DbContext
         {
             entity.HasIndex(e => e.IdLocal).IsUnique();
             entity.HasIndex(e => e.Nome);
-            entity.HasIndex(e => e.Cpf)
-                .IsUnique()
-                .HasFilter("Cpf <> ''");
+            entity.HasIndex(e => e.Empresa);
+            entity.HasIndex(e => e.Cargo);
+            entity.HasIndex(e => e.Cpf);
             entity.HasIndex(e => e.Telefone);
             entity.Property(e => e.Excluido).HasDefaultValue(false);
         });
@@ -62,9 +62,16 @@ internal sealed class AgendaDbContext : DbContext
         {
             entity.HasIndex(e => e.IdLocal).IsUnique();
             entity.HasIndex(e => e.ClienteIdLocal);
+            entity.HasIndex(e => e.ClienteNome);
+            entity.HasIndex(e => e.Empresa);
             entity.HasIndex(e => e.DataConsulta);
+            entity.HasIndex(e => e.LaudoGeradoEm);
+            entity.HasIndex(e => e.Motivo);
             entity.HasIndex(e => e.ProfissionalSalaIdLocal);
             entity.HasIndex(e => new { e.DataConsulta, e.Horario });
+            entity.HasIndex(e => new { e.Empresa, e.DataConsulta });
+            entity.HasIndex(e => new { e.Motivo, e.DataConsulta });
+            entity.HasIndex(e => new { e.ClienteNome, e.DataConsulta });
             entity.Property(e => e.Excluido).HasDefaultValue(false);
         });
 

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>1.0.0</Version>
+    <Version>1.0.4</Version>
     <ApplicationIcon>Assets\SparkCore.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -24,6 +24,8 @@
   <ItemGroup>
     <None Remove="Assets\SparkCore.ico" />
     <Resource Include="Assets\SparkCore.ico" />
+    <None Remove="Assets\SparkCoreLogo.png" />
+    <Resource Include="Assets\SparkCoreLogo.png" />
     <None Remove="Assets\sparkcore-bg.png" />
     <Resource Include="Assets\sparkcore-bg.png" />
     <Content Include="Assets\login-hologram.html">
@@ -31,6 +33,10 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
     <Content Include="Assets\hologram\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Assets\Templates\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
@@ -44,6 +50,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
+    <PackageReference Include="PdfSharpCore" Version="1.3.67" />
   </ItemGroup>
 
   <Target Name="PublishSparkCoreUpdater" BeforeTargets="Publish">
@@ -58,17 +65,11 @@
   </Target>
 
   <Target Name="CopyHologramThreeJsToOutput" AfterTargets="Build">
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\hologram\three.js"
-          DestinationFolder="$(TargetDir)Assets\hologram\"
-          SkipUnchangedFiles="true"
-          Condition="Exists('$(MSBuildProjectDirectory)\Assets\hologram\three.js')" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\hologram\three.js" DestinationFolder="$(TargetDir)Assets\hologram\" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildProjectDirectory)\Assets\hologram\three.js')" />
   </Target>
 
   <Target Name="CopyHologramThreeJsToPublish" AfterTargets="Publish">
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\hologram\three.js"
-          DestinationFolder="$(PublishDir)Assets\hologram\"
-          SkipUnchangedFiles="true"
-          Condition="Exists('$(MSBuildProjectDirectory)\Assets\hologram\three.js') and '$(PublishDir)' != ''" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\hologram\three.js" DestinationFolder="$(PublishDir)Assets\hologram\" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildProjectDirectory)\Assets\hologram\three.js') and '$(PublishDir)' != ''" />
   </Target>
 
 </Project>

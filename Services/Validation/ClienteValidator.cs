@@ -12,6 +12,12 @@ internal static class ClienteValidator
         if (string.IsNullOrWhiteSpace(cliente.Nome))
             result.Add("Informe o nome do cliente.");
 
+        if (string.IsNullOrWhiteSpace(cliente.Empresa))
+            result.Add("Informe a empresa do funcionario.");
+
+        if (string.IsNullOrWhiteSpace(cliente.Cargo))
+            result.Add("Informe o cargo do funcionario.");
+
         if (!string.IsNullOrWhiteSpace(cliente.Cpf) && !InputNormalizer.IsValidCpf(cliente.Cpf))
             result.Add("CPF invalido.");
 

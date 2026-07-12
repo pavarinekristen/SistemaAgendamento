@@ -4,12 +4,14 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using AgendamentoWpfApp.Models;
+using PdfSharpCore.Pdf;
+using PdfSharpCore.Pdf.IO;
 
 namespace AgendamentoWpfApp.Services;
 
 internal sealed class LaudoPdfService
 {
-    public string GerarPdfExemplo(Cliente cliente, Consulta? consulta)
+    public LaudoPdfResult GerarLaudo(Cliente cliente, Consulta? consulta)
     {
         var folder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -17,10 +19,29 @@ internal sealed class LaudoPdfService
             "Laudos");
         Directory.CreateDirectory(folder);
 
-        var fileName = $"Laudo_{SanitizeFileName(cliente.Nome)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        var tipo = consulta?.TrabalhaArmado == true ? "ComArma" : "SemArma";
+        var fileName = $"Laudo_{tipo}_{SanitizeFileName(cliente.Nome)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
         var path = Path.Combine(folder, fileName);
+
+        var templatePath = TemplatePath();
+        if (File.Exists(templatePath))
+        {
+            ExtrairPaginaTemplate(templatePath, path, consulta?.TrabalhaArmado == true ? 2 : 1);
+            return BuildResult(path, tipo);
+        }
+
         File.WriteAllBytes(path, CriarPdf(cliente, consulta));
-        return path;
+        return BuildResult(path, tipo);
+    }
+
+    private static LaudoPdfResult BuildResult(string path, string tipo)
+    {
+        return new LaudoPdfResult(
+            path,
+            new Uri(path).AbsoluteUri,
+            Path.GetFileName(path),
+            tipo,
+            DateTime.Now);
     }
 
     private static byte[] CriarPdf(Cliente cliente, Consulta? consulta)
@@ -41,6 +62,8 @@ internal sealed class LaudoPdfService
             $"Horario: {ValueOrDash(consulta?.Horario ?? string.Empty)}",
             $"Local: {ValueOrDash(consulta?.Local ?? string.Empty)}",
             $"Profissional/Sala: {ValueOrDash(consulta?.ProfissionalSala ?? string.Empty)}",
+            $"Motivo: {ValueOrDash(consulta?.Motivo ?? string.Empty)}",
+            $"Tipo de laudo: {ValueOrDash(consulta?.TipoLaudo ?? "Sem arma")}",
             $"Status: {ValueOrDash(consulta?.Status ?? string.Empty)}",
             "",
             "Descricao / resultado:",
@@ -140,4 +163,32 @@ internal sealed class LaudoPdfService
 
         return sanitized.Replace(' ', '_');
     }
+
+    private static string TemplatePath()
+    {
+        return Path.Combine(
+            AppContext.BaseDirectory,
+            "Assets",
+            "Templates",
+            "laudos-oficiais.pdf");
+    }
+
+    private static void ExtrairPaginaTemplate(string templatePath, string outputPath, int pagina)
+    {
+        using var input = PdfReader.Open(templatePath, PdfDocumentOpenMode.Import);
+        if (input.PageCount == 0)
+            throw new InvalidOperationException("O PDF oficial de laudos nao possui paginas.");
+
+        var pageIndex = Math.Clamp(pagina, 1, input.PageCount) - 1;
+        using var output = new PdfDocument();
+        output.AddPage(input.Pages[pageIndex]);
+        output.Save(outputPath);
+    }
 }
+
+internal sealed record LaudoPdfResult(
+    string Path,
+    string Uri,
+    string FileName,
+    string Tipo,
+    DateTime GeradoEm);

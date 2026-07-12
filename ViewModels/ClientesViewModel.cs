@@ -14,11 +14,21 @@ internal sealed class ClientesViewModel : ViewModelBase
     private readonly Action _selectionChanged;
     private IEnumerable? _items;
     private Cliente? _selectedItem;
+    private IEnumerable? _empresaOptions;
     private string _countText = "";
     private string _searchTerm = "";
+    private string _selectedEmpresaFilter = "";
     private string _nome = "";
     private string _cpf = "";
     private string _email = "";
+    private string _empresa = "";
+    private string _escolaridade = "";
+    private string _cargo = "";
+    private string _estadoCivil = "";
+    private string _naturalidade = "";
+    private string _rg = "";
+    private string _sexo = "";
+    private string _tipoEndereco = "Particular";
     private string _telefone = "";
     private DateTime? _dataNascimento;
     private string _endereco = "";
@@ -48,11 +58,20 @@ internal sealed class ClientesViewModel : ViewModelBase
     }
 
     public IReadOnlyList<string> StatusOptions { get; } = new[] { "Ativo", "Inativo" };
+    public IReadOnlyList<string> SexoOptions { get; } = new[] { "Masculino", "Feminino" };
+    public IReadOnlyList<string> TipoEnderecoOptions { get; } = new[] { "Particular", "Empresa" };
+    public IReadOnlyList<string> EstadoCivilOptions { get; } = new[] { "", "Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viuvo(a)", "Uniao estavel" };
 
     public IEnumerable? Items
     {
         get => _items;
         set => SetProperty(ref _items, value);
+    }
+
+    public IEnumerable? EmpresaOptions
+    {
+        get => _empresaOptions;
+        set => SetProperty(ref _empresaOptions, value);
     }
 
     public Cliente? SelectedItem
@@ -81,6 +100,16 @@ internal sealed class ClientesViewModel : ViewModelBase
         }
     }
 
+    public string SelectedEmpresaFilter
+    {
+        get => _selectedEmpresaFilter;
+        set
+        {
+            if (SetProperty(ref _selectedEmpresaFilter, value ?? ""))
+                _searchChanged();
+        }
+    }
+
     public string Nome
     {
         get => _nome;
@@ -97,6 +126,54 @@ internal sealed class ClientesViewModel : ViewModelBase
     {
         get => _email;
         set => SetProperty(ref _email, value);
+    }
+
+    public string Empresa
+    {
+        get => _empresa;
+        set => SetProperty(ref _empresa, value);
+    }
+
+    public string Escolaridade
+    {
+        get => _escolaridade;
+        set => SetProperty(ref _escolaridade, value);
+    }
+
+    public string Cargo
+    {
+        get => _cargo;
+        set => SetProperty(ref _cargo, value);
+    }
+
+    public string EstadoCivil
+    {
+        get => _estadoCivil;
+        set => SetProperty(ref _estadoCivil, value);
+    }
+
+    public string Naturalidade
+    {
+        get => _naturalidade;
+        set => SetProperty(ref _naturalidade, value);
+    }
+
+    public string Rg
+    {
+        get => _rg;
+        set => SetProperty(ref _rg, value);
+    }
+
+    public string Sexo
+    {
+        get => _sexo;
+        set => SetProperty(ref _sexo, value);
+    }
+
+    public string TipoEndereco
+    {
+        get => _tipoEndereco;
+        set => SetProperty(ref _tipoEndereco, string.IsNullOrWhiteSpace(value) ? "Particular" : value);
     }
 
     public string Telefone
@@ -187,6 +264,14 @@ internal sealed class ClientesViewModel : ViewModelBase
         cliente.Nome = Nome.Trim();
         cliente.Cpf = InputNormalizer.NormalizeCpf(Cpf);
         cliente.Email = InputNormalizer.NormalizeEmail(Email);
+        cliente.Empresa = Empresa.Trim();
+        cliente.Escolaridade = Escolaridade.Trim();
+        cliente.Cargo = Cargo.Trim();
+        cliente.EstadoCivil = EstadoCivil.Trim();
+        cliente.Naturalidade = Naturalidade.Trim();
+        cliente.Rg = Rg.Trim();
+        cliente.Sexo = Sexo.Trim();
+        cliente.TipoEndereco = TipoEndereco;
         cliente.Telefone = InputNormalizer.NormalizeTelefone(Telefone);
         cliente.DataNascimento = DataNascimento;
         cliente.Endereco = Endereco.Trim();
@@ -212,6 +297,14 @@ internal sealed class ClientesViewModel : ViewModelBase
         Nome = cliente.Nome;
         Cpf = cliente.Cpf;
         Email = cliente.Email;
+        Empresa = cliente.Empresa;
+        Escolaridade = cliente.Escolaridade;
+        Cargo = cliente.Cargo;
+        EstadoCivil = cliente.EstadoCivil;
+        Naturalidade = cliente.Naturalidade;
+        Rg = cliente.Rg;
+        Sexo = cliente.Sexo;
+        TipoEndereco = string.IsNullOrWhiteSpace(cliente.TipoEndereco) ? "Particular" : cliente.TipoEndereco;
         Telefone = cliente.Telefone;
         DataNascimento = cliente.DataNascimento;
         Endereco = cliente.Endereco;
@@ -227,6 +320,14 @@ internal sealed class ClientesViewModel : ViewModelBase
         Nome = "";
         Cpf = "";
         Email = "";
+        Empresa = "";
+        Escolaridade = "";
+        Cargo = "";
+        EstadoCivil = "";
+        Naturalidade = "";
+        Rg = "";
+        Sexo = "";
+        TipoEndereco = "Particular";
         Telefone = "";
         DataNascimento = null;
         Endereco = "";
@@ -244,6 +345,11 @@ internal sealed class ClientesViewModel : ViewModelBase
             : $"{total} cliente(s) cadastrado(s)";
     }
 
+    public void SetEmpresaOptions(IEnumerable empresas)
+    {
+        EmpresaOptions = empresas;
+    }
+
     public void SetDetails(Cliente? cliente)
     {
         if (cliente == null)
@@ -256,9 +362,9 @@ internal sealed class ClientesViewModel : ViewModelBase
         }
 
         DetailName = cliente.Nome;
-        DetailContact = $"CPF: {ValueOrDash(cliente.CpfFormatado)} | Tel: {ValueOrDash(cliente.TelefoneFormatado)} | E-mail: {ValueOrDash(cliente.Email)}";
-        DetailAddress = $"Endereco: {ValueOrDash(cliente.Endereco)} {ValueOrDash(cliente.Bairro)} {ValueOrDash(cliente.Cidade)}".Trim();
-        DetailNotes = $"Status: {cliente.Status}. {cliente.Observacoes}";
+        DetailContact = $"ID: {cliente.IdTexto} | CPF: {ValueOrDash(cliente.CpfFormatado)} | RG: {ValueOrDash(cliente.Rg)} | Tel: {ValueOrDash(cliente.TelefoneFormatado)}";
+        DetailAddress = $"Empresa: {ValueOrDash(cliente.Empresa)} | Cargo: {ValueOrDash(cliente.Cargo)} | Endereco {ValueOrDash(cliente.TipoEndereco)}: {ValueOrDash(cliente.Endereco)} {ValueOrDash(cliente.Bairro)} {ValueOrDash(cliente.Cidade)}".Trim();
+        DetailNotes = $"Status: {cliente.Status}. Sexo: {ValueOrDash(cliente.Sexo)}. Escolaridade: {ValueOrDash(cliente.Escolaridade)}. {cliente.Observacoes}";
     }
 
     public void SetStatus(string message, bool isError)

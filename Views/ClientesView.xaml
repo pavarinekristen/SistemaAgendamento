@@ -7,257 +7,213 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Cabecalho: titulo + pesquisa -->
-        <Grid Grid.Row="0" Margin="0,0,0,24">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="340" />
-            </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Cadastro de funcionario" Style="{StaticResource SparkSectionTitleStyle}" />
+            <TextBlock Text="{Binding CountText}" Style="{StaticResource SparkSubtitleStyle}" />
+        </StackPanel>
 
-            <StackPanel VerticalAlignment="Bottom">
-                <TextBlock Text="Clientes" Style="{StaticResource SparkSectionTitleStyle}" />
-                <TextBlock Text="{Binding CountText}" Style="{StaticResource SparkSubtitleStyle}" />
-            </StackPanel>
-
-            <Grid Grid.Column="1" VerticalAlignment="Bottom">
-                <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource SparkTextBoxStyle}"
-                         Background="{StaticResource SparkPanelBrush}"
-                         Height="44"
-                         Padding="40,0,14,0" />
-                <Path Data="M19,11 A8,8 0 1 1 3,11 A8,8 0 1 1 19,11 M21,21 L16.7,16.7"
-                      Stroke="{StaticResource SparkFaintBrush}" StrokeThickness="2"
-                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                      Width="17" Height="17" Stretch="Uniform"
-                      HorizontalAlignment="Left" VerticalAlignment="Center"
-                      Margin="14,0,0,0" IsHitTestVisible="False" />
-            </Grid>
-        </Grid>
-
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="400" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Card de cadastro -->
-            <Border Grid.Column="0"
-                    Style="{StaticResource SparkCardStyle}"
-                    Padding="24"
-                    Margin="0,0,22,0"
-                    VerticalAlignment="Top">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                            <Border Style="{StaticResource SparkIconChipStyle}">
-                                <Path Data="M19,21 L19,19 C19,16.8 17.2,15 15,15 L9,15 C6.8,15 5,16.8 5,19 L5,21 M16,7 A4,4 0 1 1 8,7 A4,4 0 1 1 16,7"
-                                      Stroke="{StaticResource SparkAccentBrush}" StrokeThickness="2"
-                                      StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                      Width="18" Height="18" Stretch="Uniform"
-                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <TextBlock Text="Cadastro de cliente"
-                                       Style="{StaticResource SparkCardTitleStyle}"
-                                       Margin="10,0,0,0" />
-                        </StackPanel>
-
-                        <Label Content="Nome completo" />
-                        <TextBox x:Name="NomeTextBox"
-                                 Text="{Binding Nome, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource SparkTextBoxStyle}" />
-
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="14" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <Label Content="CPF" />
-                                <TextBox Text="{Binding Cpf, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SparkTextBoxStyle}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <Label Content="Nascimento" />
-                                <DatePicker SelectedDate="{Binding DataNascimento, Mode=TwoWay}"
-                                            Style="{StaticResource SparkDatePickerStyle}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="14" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <Label Content="Telefone" />
-                                <TextBox Text="{Binding Telefone, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SparkTextBoxStyle}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <Label Content="E-mail" />
-                                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SparkTextBoxStyle}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Label Content="Endereço" Margin="0,16,0,0" />
-                        <TextBox Text="{Binding Endereco, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource SparkTextBoxStyle}" />
-
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="14" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <Label Content="Bairro" />
-                                <TextBox Text="{Binding Bairro, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SparkTextBoxStyle}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <Label Content="Cidade" />
-                                <TextBox Text="{Binding Cidade, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SparkTextBoxStyle}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="14" />
-                                <ColumnDefinition Width="150" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <Label Content="Observações" />
-                                <TextBox Text="{Binding Observacoes, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SparkTextAreaStyle}"
-                                         MinHeight="92" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <Label Content="Status" />
-                                <ComboBox ItemsSource="{Binding StatusOptions}"
-                                          SelectedItem="{Binding Status, Mode=TwoWay}"
-                                          Style="{StaticResource SparkComboBoxStyle}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="{Binding StatusMessage}"
-                                   Foreground="{Binding StatusBrush}"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   Margin="0,14,0,0" />
-
-                        <WrapPanel Margin="0,16,0,0">
-                            <Button Content="Salvar"
-                                    Style="{StaticResource SparkPrimaryButtonStyle}"
-                                    Command="{Binding SaveCommand}" />
-                            <Button Content="Novo"
-                                    Style="{StaticResource SparkSecondaryButtonStyle}"
-                                    Margin="10,0,0,0"
-                                    Command="{Binding NewCommand}" />
-                            <Button Content="Excluir"
-                                    Style="{StaticResource SparkDangerButtonStyle}"
-                                    Margin="10,0,0,0"
-                                    Command="{Binding DeleteCommand}" />
-                        </WrapPanel>
+        <Border Grid.Row="1"
+                Style="{StaticResource SparkCardStyle}"
+                Padding="28"
+                VerticalAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <Border Style="{StaticResource SparkIconChipStyle}">
+                            <Path Data="M19,21 L19,19 C19,16.8 17.2,15 15,15 L9,15 C6.8,15 5,16.8 5,19 L5,21 M16,7 A4,4 0 1 1 8,7 A4,4 0 1 1 16,7"
+                                  Stroke="{StaticResource SparkAccentBrush}" StrokeThickness="2"
+                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="18" Height="18" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="Dados cadastrais"
+                                   Style="{StaticResource SparkCardTitleStyle}"
+                                   Margin="10,0,0,0" />
                     </StackPanel>
-                </ScrollViewer>
-            </Border>
 
-            <!-- Tabela + detalhe -->
-            <Grid Grid.Column="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <Border Grid.Row="0" Style="{StaticResource SparkCardStyle}" Padding="6">
-                    <DataGrid ItemsSource="{Binding Items}"
-                              SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                              Style="{StaticResource SparkDataGridStyle}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="NOME" Binding="{Binding Nome}" Width="1.7*">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                        <Setter Property="FontSize" Value="13.5" />
-                                        <Setter Property="Foreground" Value="{StaticResource SparkTextBrush}" />
-                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-                                        <Setter Property="VerticalAlignment" Value="Center" />
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="CPF" Binding="{Binding CpfFormatado}" Width="130" />
-                            <DataGridTextColumn Header="TELEFONE" Binding="{Binding TelefoneFormatado}" Width="140" />
-                            <DataGridTextColumn Header="E-MAIL" Binding="{Binding Email}" Width="*" />
-                            <DataGridTemplateColumn Header="STATUS" Width="110">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource SparkStatusPillStyle}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Ellipse Style="{StaticResource SparkStatusDotStyle}" />
-                                                <TextBlock Text="{Binding Status}" Style="{StaticResource SparkStatusPillTextStyle}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Border>
-
-                <!-- Card de detalhe -->
-                <Border Grid.Row="1"
-                        Style="{StaticResource SparkCardStyle}"
-                        Padding="22,20"
-                        Margin="0,18,0,0"
-                        MinHeight="110">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Border Width="46" Height="46" CornerRadius="12"
-                                Background="{StaticResource SparkLogoGradientBrush}"
-                                VerticalAlignment="Top"
-                                Margin="0,0,14,0">
-                            <Path Data="M19,21 L19,19 C19,16.8 17.2,15 15,15 L9,15 C6.8,15 5,16.8 5,19 L5,21 M16,7 A4,4 0 1 1 8,7 A4,4 0 1 1 16,7"
-                                  Stroke="White" StrokeThickness="2"
-                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                  Width="20" Height="20" Stretch="Uniform"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding DetailName}"
-                                       FontSize="16"
-                                       FontWeight="Bold" />
-                            <TextBlock Text="{Binding DetailContact}"
-                                       Foreground="{StaticResource SparkMutedBrush}"
-                                       FontSize="13"
-                                       Margin="0,6,0,0"
-                                       TextWrapping="Wrap" />
+                        <StackPanel>
+                            <Label Content="Nome completo" />
+                            <TextBox x:Name="NomeTextBox"
+                                     Text="{Binding Nome, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
                         </StackPanel>
-
-                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="16,0,0,0">
-                            <TextBlock Text="{Binding DetailAddress}"
-                                       FontWeight="SemiBold"
-                                       FontSize="13"
-                                       TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding DetailNotes}"
-                                       Foreground="{StaticResource SparkMutedBrush}"
-                                       FontSize="13"
-                                       Margin="0,6,0,0"
-                                       TextWrapping="Wrap" />
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Empresa" />
+                            <TextBox Text="{Binding Empresa, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <Label Content="Cargo" />
+                            <TextBox Text="{Binding Cargo, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
                         </StackPanel>
                     </Grid>
-                </Border>
-            </Grid>
-        </Grid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Label Content="CPF" />
+                            <TextBox Text="{Binding Cpf, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="RG" />
+                            <TextBox Text="{Binding Rg, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <Label Content="Nascimento" />
+                            <DatePicker SelectedDate="{Binding DataNascimento, Mode=TwoWay}"
+                                        Style="{StaticResource SparkDatePickerStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Label Content="Sexo" />
+                            <ComboBox ItemsSource="{Binding SexoOptions}"
+                                      SelectedItem="{Binding Sexo, Mode=TwoWay}"
+                                      Style="{StaticResource SparkComboBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Telefone" />
+                            <TextBox Text="{Binding Telefone, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <Label Content="E-mail" />
+                            <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Label Content="Escolaridade" />
+                            <TextBox Text="{Binding Escolaridade, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Estado civil" />
+                            <ComboBox ItemsSource="{Binding EstadoCivilOptions}"
+                                      SelectedItem="{Binding EstadoCivil, Mode=TwoWay}"
+                                      Style="{StaticResource SparkComboBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <Label Content="Naturalidade" />
+                            <TextBox Text="{Binding Naturalidade, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="220" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Label Content="Tipo de endereco" />
+                            <ComboBox ItemsSource="{Binding TipoEnderecoOptions}"
+                                      SelectedItem="{Binding TipoEndereco, Mode=TwoWay}"
+                                      Style="{StaticResource SparkComboBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Endereco" />
+                            <TextBox Text="{Binding Endereco, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <Label Content="Bairro" />
+                            <TextBox Text="{Binding Bairro, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="180" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Label Content="Cidade" />
+                            <TextBox Text="{Binding Cidade, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextBoxStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Observacoes" />
+                            <TextBox Text="{Binding Observacoes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SparkTextAreaStyle}"
+                                     MinHeight="92" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <Label Content="Status" />
+                            <ComboBox ItemsSource="{Binding StatusOptions}"
+                                      SelectedItem="{Binding Status, Mode=TwoWay}"
+                                      Style="{StaticResource SparkComboBoxStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{Binding StatusBrush}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Margin="0,14,0,0" />
+
+                    <WrapPanel Margin="0,16,0,0">
+                        <Button Content="Salvar"
+                                Style="{StaticResource SparkPrimaryButtonStyle}"
+                                Command="{Binding SaveCommand}" />
+                        <Button Content="Novo"
+                                Style="{StaticResource SparkSecondaryButtonStyle}"
+                                Margin="10,0,0,0"
+                                Command="{Binding NewCommand}" />
+                        <Button Content="Excluir"
+                                Style="{StaticResource SparkDangerButtonStyle}"
+                                Margin="10,0,0,0"
+                                Command="{Binding DeleteCommand}" />
+                    </WrapPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>

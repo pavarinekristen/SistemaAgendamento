@@ -41,6 +41,16 @@ internal sealed class AgendaWorkspaceService : IDisposable
         return _clienteStore.LoadAsync();
     }
 
+    public Task<List<Cliente>> SearchClientesAsync(string term, int take = 50)
+    {
+        return _clienteStore.SearchAsync(term, take);
+    }
+
+    public Task<Cliente?> FindClienteByIdLocalAsync(string idLocal)
+    {
+        return _clienteStore.FindByIdLocalAsync(idLocal);
+    }
+
     public async Task SaveClienteAsync(Cliente cliente)
     {
         await _clienteStore.SaveAsync(cliente);
@@ -78,6 +88,17 @@ internal sealed class AgendaWorkspaceService : IDisposable
     public Task<List<Consulta>> LoadConsultasDoClienteAsync(string clienteIdLocal)
     {
         return _consultaStore.LoadByClienteAsync(clienteIdLocal);
+    }
+
+    public Task<List<Consulta>> LoadRelatorioConsultasAsync(
+        DateTime? dataInicial,
+        DateTime? dataFinal,
+        string empresa = "",
+        string funcionario = "",
+        string motivo = "",
+        int take = 1000)
+    {
+        return _consultaStore.LoadReportAsync(dataInicial, dataFinal, empresa, funcionario, motivo, take);
     }
 
     public async Task SaveConsultaAsync(Consulta consulta)

@@ -14,11 +14,12 @@ internal static class ConsultaValidator
 
         if (consulta.DataConsulta == default)
             result.Add("Informe o dia da consulta.");
-        else if (consulta.DataConsulta.Date < DateTime.Today)
-            result.Add("A consulta nao pode ser marcada em data passada.");
 
         if (string.IsNullOrWhiteSpace(consulta.Horario))
             result.Add("Informe um horario valido, como 14:00.");
+
+        if (string.IsNullOrWhiteSpace(consulta.Motivo))
+            result.Add("Selecione o motivo do agendamento.");
 
         if (string.IsNullOrWhiteSpace(consulta.Local))
             result.Add("Informe o local da consulta.");

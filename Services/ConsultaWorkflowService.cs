@@ -25,6 +25,17 @@ internal sealed class ConsultaWorkflowService
         return _workspaceService.LoadConsultasDoClienteAsync(clienteIdLocal);
     }
 
+    public Task<List<Consulta>> LoadReportAsync(
+        DateTime? dataInicial,
+        DateTime? dataFinal,
+        string empresa = "",
+        string funcionario = "",
+        string motivo = "",
+        int take = 1000)
+    {
+        return _workspaceService.LoadRelatorioConsultasAsync(dataInicial, dataFinal, empresa, funcionario, motivo, take);
+    }
+
     public async Task SaveAsync(Consulta consulta)
     {
         var validation = ConsultaValidator.Validate(consulta);

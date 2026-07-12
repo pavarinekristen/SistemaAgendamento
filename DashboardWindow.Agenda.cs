@@ -27,6 +27,25 @@ public partial class DashboardWindow
         await SaveConsultaAsync();
     }
 
+    private async void AgendaView_ClienteSearchRequested(object? sender, EventArgs e)
+    {
+        await LoadAgendaClienteCandidatesAsync(AgendaView.ClienteSearchTerm);
+    }
+
+    private async Task LoadAgendaClienteCandidatesAsync(string term)
+    {
+        var candidatos = await _clienteWorkflow.SearchAsync(term, 50);
+        AgendaView.SetClienteCandidatesSource(candidatos);
+
+        if (candidatos.Count == 1)
+            AgendaView.SelectCliente(candidatos[0]);
+
+        SetAgendaStatus(candidatos.Count == 0
+            ? "Nenhum funcionario encontrado para a busca."
+            : $"{candidatos.Count} funcionario(s) encontrado(s). Selecione um para agendar.",
+            candidatos.Count == 0);
+    }
+
     private async Task SaveConsultaAsync()
     {
         if (!AgendaView.TryBuildFromForm(_selectedConsulta, out var consulta, out var formError))
@@ -80,12 +99,21 @@ public partial class DashboardWindow
         SetAgendaStatus("Consulta excluida.", false);
     }
 
-    private void LoadConsultaForm(Consulta? consulta)
+    private async void LoadConsultaForm(Consulta? consulta)
     {
         _loadingConsultaForm = true;
         try
         {
             AgendaView.LoadForm(consulta);
+            if (consulta != null)
+            {
+                var cliente = await _clienteWorkflow.FindByIdLocalAsync(consulta.ClienteIdLocal);
+                if (cliente != null)
+                {
+                    AgendaView.SetClienteCandidatesSource(new[] { cliente });
+                    AgendaView.SelectCliente(cliente);
+                }
+            }
         }
         finally
         {

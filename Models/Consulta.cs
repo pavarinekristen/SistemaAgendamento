@@ -22,6 +22,12 @@ internal sealed class Consulta
     [MaxLength(160)]
     public string ClienteNome { get; set; } = string.Empty;
 
+    [MaxLength(160)]
+    public string Empresa { get; set; } = string.Empty;
+
+    [MaxLength(120)]
+    public string ClienteCargo { get; set; } = string.Empty;
+
     public DateTime DataConsulta { get; set; } = DateTime.Today;
 
     [Required]
@@ -34,11 +40,30 @@ internal sealed class Consulta
     [MaxLength(120)]
     public string ProfissionalSala { get; set; } = string.Empty;
 
+    [MaxLength(80)]
+    public string Motivo { get; set; } = "Admissao";
+
+    public bool TrabalhaArmado { get; set; }
+
     [MaxLength(36)]
     public string ProfissionalSalaIdLocal { get; set; } = string.Empty;
 
     [MaxLength(30)]
     public string Status { get; set; } = "Agendada";
+
+    [MaxLength(30)]
+    public string LaudoTipo { get; set; } = string.Empty;
+
+    [MaxLength(260)]
+    public string LaudoPdfNomeArquivo { get; set; } = string.Empty;
+
+    [MaxLength(600)]
+    public string LaudoPdfPath { get; set; } = string.Empty;
+
+    [MaxLength(800)]
+    public string LaudoPdfUri { get; set; } = string.Empty;
+
+    public DateTime? LaudoGeradoEm { get; set; }
 
     public string Observacoes { get; set; } = string.Empty;
 
@@ -55,4 +80,7 @@ internal sealed class Consulta
 
     [NotMapped]
     public string DataHoraTexto => $"{DataTexto} {Horario}".Trim();
+
+    [NotMapped]
+    public string TipoLaudo => TrabalhaArmado ? "Com arma" : "Sem arma";
 }

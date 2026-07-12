@@ -29,6 +29,7 @@ public partial class ClientesView : UserControl
 
     internal Cliente? SelectedCliente => _viewModel.SelectedItem;
     internal string SearchTerm => _viewModel.SearchTerm.Trim();
+    internal string SelectedEmpresaFilter => _viewModel.SelectedEmpresaFilter.Trim();
 
     internal Cliente BuildFromForm(Cliente? current)
     {
@@ -38,6 +39,11 @@ public partial class ClientesView : UserControl
     public void SetItemsSource(IEnumerable items)
     {
         _viewModel.Items = items;
+    }
+
+    public void SetEmpresaOptions(IEnumerable empresas)
+    {
+        _viewModel.SetEmpresaOptions(empresas);
     }
 
     public void SetCount(int total, int visible, bool hasSearch)

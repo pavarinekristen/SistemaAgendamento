@@ -11,6 +11,7 @@ public partial class AgendaView : UserControl
 {
     public event EventHandler? DateChanged;
     public event EventHandler? SelectionChanged;
+    public event EventHandler? ClienteSearchRequested;
     public event EventHandler? SaveRequested;
     public event EventHandler? NewRequested;
     public event EventHandler? DeleteRequested;
@@ -30,10 +31,16 @@ public partial class AgendaView : UserControl
 
     internal DateTime? SelectedDate => _viewModel.SelectedDate;
     internal Consulta? SelectedConsulta => _viewModel.SelectedConsulta;
+    internal string ClienteSearchTerm => _viewModel.ClienteSearchTerm;
 
     public void SetClientesSource(IEnumerable items)
     {
-        _viewModel.ClientesSource = items;
+        _viewModel.ClienteCandidatesSource = items;
+    }
+
+    public void SetClienteCandidatesSource(IEnumerable items)
+    {
+        _viewModel.ClienteCandidatesSource = items;
     }
 
     public void SetProfissionaisSource(IEnumerable items)
@@ -81,6 +88,13 @@ public partial class AgendaView : UserControl
         _viewModel.SelectedConsulta = consulta;
     }
 
+    internal void SelectCliente(Cliente? cliente)
+    {
+        _viewModel.SelectedCliente = cliente;
+        if (cliente != null)
+            _viewModel.ClienteSearchTerm = cliente.Nome;
+    }
+
     internal void LoadForm(Consulta? consulta)
     {
         _viewModel.LoadForm(consulta);
@@ -99,5 +113,10 @@ public partial class AgendaView : UserControl
     private void ConsultaHorarioTextBox_LostFocus(object sender, RoutedEventArgs e)
     {
         _viewModel.NormalizeHorario();
+    }
+
+    private void ClienteSearchButton_Click(object sender, RoutedEventArgs e)
+    {
+        ClienteSearchRequested?.Invoke(this, EventArgs.Empty);
     }
 }

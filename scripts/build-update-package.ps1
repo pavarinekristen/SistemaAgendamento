@@ -46,6 +46,7 @@ if (Test-Path $ZipPath) {
 }
 
 Write-Host "[2/4] Criando ZIP de atualizacao..."
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
@@ -55,8 +56,9 @@ try {
             $_.Name -ne "SparkCore.Updater.exe"
         }
 
+    $publishFullPath = (Get-Item -LiteralPath $PublishDir).FullName
     foreach ($file in $files) {
-        $relative = [System.IO.Path]::GetRelativePath($PublishDir, $file.FullName)
+        $relative = $file.FullName.Substring($publishFullPath.Length).TrimStart('\', '/')
         [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $relative, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
     }
 } finally {

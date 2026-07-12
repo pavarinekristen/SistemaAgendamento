@@ -10,21 +10,43 @@ public partial class DashboardWindow
 {
     private bool FilterCliente(object item)
     {
-        return item is Cliente cliente &&
-            _clienteWorkflow.MatchesSearch(cliente, ClientesView.SearchTerm);
+        if (item is not Cliente cliente)
+            return false;
+
+        var empresa = PesquisaClientesView.SelectedEmpresaFilter;
+        if (!string.IsNullOrWhiteSpace(empresa) &&
+            !string.Equals(cliente.Empresa, empresa, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return _clienteWorkflow.MatchesSearch(cliente, PesquisaClientesView.SearchTerm);
     }
 
-    private void ClientesView_SearchChanged(object? sender, EventArgs e)
+    private void PesquisaClientesView_FilterChanged(object? sender, EventArgs e)
     {
         _clientesView.Refresh();
         UpdateSummary();
     }
 
-    private void ClientesView_SelectionChanged(object? sender, EventArgs e)
+    private void PesquisaClientesView_SelectionChanged(object? sender, EventArgs e)
     {
-        _selectedCliente = ClientesView.SelectedCliente;
+        UpdateDetails(PesquisaClientesView.SelectedCliente);
+    }
+
+    private void PesquisaClientesView_EditRequested(object? sender, EventArgs e)
+    {
+        if (PesquisaClientesView.SelectedCliente == null)
+        {
+            PesquisaClientesView.SetDetails(null);
+            return;
+        }
+
+        _selectedCliente = PesquisaClientesView.SelectedCliente;
         LoadClientForm(_selectedCliente);
-        UpdateDetails(_selectedCliente);
+        MainTabControl.SelectedIndex = 0;
+        SetActiveNav(NavClientesButton);
+        SetFormStatus("Cadastro carregado para edicao.", false);
     }
 
     private async void ClientesView_SaveRequested(object? sender, EventArgs e)
@@ -51,7 +73,7 @@ public partial class DashboardWindow
         }
 
         await LoadClientesAsync();
-        ClientesView.SelectItem(_clientes.FirstOrDefault(c => c.IdLocal == cliente.IdLocal));
+        PesquisaClientesView.SelectItem(_clientes.FirstOrDefault(c => c.IdLocal == cliente.IdLocal));
         UpdateDetails(cliente);
         SetFormStatus("Cliente salvo. Ele ja pode ser agendado na aba Agenda.", false);
     }
@@ -59,7 +81,7 @@ public partial class DashboardWindow
     private void ClientesView_NewRequested(object? sender, EventArgs e)
     {
         ClearClientForm();
-        ClientesView.SelectItem(null);
+        PesquisaClientesView.SelectItem(null);
         UpdateDetails(null);
     }
 
@@ -102,6 +124,6 @@ public partial class DashboardWindow
 
     private void UpdateDetails(Cliente? cliente)
     {
-        ClientesView.SetDetails(cliente);
+        PesquisaClientesView.SetDetails(cliente);
     }
 }

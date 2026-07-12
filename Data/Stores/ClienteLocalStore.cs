@@ -36,6 +36,48 @@ internal sealed class ClienteLocalStore
             .ToListAsync();
     }
 
+    public async Task<List<Cliente>> SearchAsync(string term, int take = 50, bool incluirExcluidos = false)
+    {
+        await using var context = _database.CreateContext();
+        term = (term ?? string.Empty).Trim();
+        take = System.Math.Clamp(take <= 0 ? 50 : take, 10, 100);
+
+        var query = context.Clientes.AsNoTracking();
+
+        if (!incluirExcluidos)
+            query = query.Where(c => !c.Excluido);
+
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            query = query.Where(c =>
+                EF.Functions.Like(c.Nome, $"%{term}%") ||
+                EF.Functions.Like(c.Empresa, $"%{term}%") ||
+                EF.Functions.Like(c.Cargo, $"%{term}%") ||
+                EF.Functions.Like(c.Cpf, $"%{term}%") ||
+                EF.Functions.Like(c.Rg, $"%{term}%"));
+        }
+
+        return await query
+            .OrderBy(c => c.Nome)
+            .ThenBy(c => c.Cpf)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<Cliente?> FindByIdLocalAsync(string idLocal, bool incluirExcluidos = false)
+    {
+        if (string.IsNullOrWhiteSpace(idLocal))
+            return null;
+
+        await using var context = _database.CreateContext();
+        var query = context.Clientes.AsNoTracking().Where(c => c.IdLocal == idLocal);
+
+        if (!incluirExcluidos)
+            query = query.Where(c => !c.Excluido);
+
+        return await query.FirstOrDefaultAsync();
+    }
+
     public async Task SaveAsync(Cliente cliente)
     {
         await using var context = _database.CreateContext();
@@ -46,18 +88,6 @@ internal sealed class ClienteLocalStore
         var validation = ClienteValidator.Validate(cliente);
         if (!validation.IsValid)
             throw new System.InvalidOperationException(validation.Message);
-
-        if (!string.IsNullOrWhiteSpace(cliente.Cpf))
-        {
-            var duplicado = await context.Clientes
-                .AsNoTracking()
-                .Where(c => !c.Excluido)
-                .Where(c => c.IdLocal != cliente.IdLocal)
-                .AnyAsync(c => c.Cpf == cliente.Cpf);
-
-            if (duplicado)
-                throw new System.InvalidOperationException("Ja existe cliente cadastrado com este CPF.");
-        }
 
         if (cliente.Id == 0)
         {

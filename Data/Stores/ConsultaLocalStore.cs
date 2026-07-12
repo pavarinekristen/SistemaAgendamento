@@ -67,6 +67,53 @@ internal sealed class ConsultaLocalStore
             .ToListAsync();
     }
 
+    public async Task<List<Consulta>> LoadReportAsync(
+        DateTime? dataInicial,
+        DateTime? dataFinal,
+        string empresa = "",
+        string funcionario = "",
+        string motivo = "",
+        int take = 1000,
+        bool incluirExcluidas = false)
+    {
+        await using var context = _database.CreateContext();
+        var query = context.Consultas.AsNoTracking();
+
+        if (!incluirExcluidas)
+            query = query.Where(c => !c.Excluido);
+
+        if (dataInicial.HasValue)
+            query = query.Where(c => c.DataConsulta >= dataInicial.Value.Date);
+
+        if (dataFinal.HasValue)
+            query = query.Where(c => c.DataConsulta < dataFinal.Value.Date.AddDays(1));
+
+        empresa = (empresa ?? string.Empty).Trim();
+        funcionario = (funcionario ?? string.Empty).Trim();
+        motivo = (motivo ?? string.Empty).Trim();
+
+        if (!string.IsNullOrWhiteSpace(empresa))
+            query = query.Where(c => EF.Functions.Like(c.Empresa, $"%{empresa}%"));
+
+        if (!string.IsNullOrWhiteSpace(funcionario))
+            query = query.Where(c =>
+                EF.Functions.Like(c.ClienteNome, $"%{funcionario}%") ||
+                EF.Functions.Like(c.ClienteCargo, $"%{funcionario}%"));
+
+        if (!string.IsNullOrWhiteSpace(motivo))
+            query = query.Where(c => c.Motivo == motivo);
+
+        take = Math.Clamp(take <= 0 ? 1000 : take, 50, 2000);
+
+        return await query
+            .OrderByDescending(c => c.DataConsulta)
+            .ThenBy(c => c.Horario)
+            .ThenBy(c => c.Empresa)
+            .ThenBy(c => c.ClienteNome)
+            .Take(take)
+            .ToListAsync();
+    }
+
     public async Task SaveAsync(Consulta consulta)
     {
         await using var context = _database.CreateContext();
