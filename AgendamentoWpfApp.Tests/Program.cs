@@ -295,6 +295,7 @@ static async Task RunIncrementalSnapshotTestsAsync(string databasePath)
 {
     using var workspace = new AgendaWorkspaceService(databasePath);
     var clienteWorkflow = new ClienteWorkflowService(workspace);
+    var profissionalWorkflow = new ProfissionalSalaWorkflowService(workspace);
     await workspace.MigrateAsync();
 
     var cliente = new Cliente
@@ -309,68 +310,70 @@ static async Task RunIncrementalSnapshotTestsAsync(string databasePath)
 
     var syncService = new AgendaSnapshotSyncService(databasePath);
 
-    var snapshot = await syncService.CriarSnapshotAsync(completo: false);
-    Assert(!snapshot.SnapshotCompleto, "Snapshot incremental marcado como completo.");
-    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 1, "Cliente pendente nao entrou no snapshot incremental.");
+    var lotes = await ColetarLotesAsync(syncService, completo: false);
+    Assert(lotes.All(l => !l.SnapshotCompleto), "Nenhum lote pode afirmar snapshot completo.");
+    Assert(RegistrosDaTabela(lotes, "CLIENTES") == 1, "Cliente pendente nao entrou no snapshot incremental.");
 
-    await syncService.MarcarRegistrosComoSincronizadosAsync(snapshot, DateTime.Now);
+    foreach (var lote in lotes)
+        await syncService.MarcarRegistrosComoSincronizadosAsync(lote, DateTime.Now);
 
-    snapshot = await syncService.CriarSnapshotAsync(completo: false);
-    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 0, "Cliente ja sincronizado foi reenviado no snapshot incremental.");
+    lotes = await ColetarLotesAsync(syncService, completo: false);
+    Assert(RegistrosDaTabela(lotes, "CLIENTES") == 0, "Cliente ja sincronizado foi reenviado no snapshot incremental.");
+    // Sem pendencias ainda sai um unico request vazio (valida sessao e registra
+    // o dispositivo), nunca marcado como completo: um "completo" vazio
+    // autorizaria o servidor a excluir tudo do dispositivo.
+    Assert(lotes.Count == 1 && lotes[0].Tabelas.Count == 0, "Sem pendencias deveria gerar um unico request vazio.");
+    Assert(!lotes[0].SnapshotCompleto, "Request vazio nao pode ser marcado como snapshot completo.");
 
-    snapshot = await syncService.CriarSnapshotAsync(completo: true);
-    Assert(snapshot.SnapshotCompleto, "Snapshot completo nao marcado como completo.");
-    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 1, "Snapshot completo deve enviar todos os registros.");
+    lotes = await ColetarLotesAsync(syncService, completo: true);
+    Assert(RegistrosDaTabela(lotes, "CLIENTES") == 1, "Snapshot completo deve enviar todos os registros.");
+    Assert(lotes.All(l => !l.SnapshotCompleto), "Mesmo o snapshot completo viaja em lotes parciais.");
 
     // Garante que o relogio avancou: AtualizadoEm precisa ficar maior que SincronizadoEm.
     await Task.Delay(50);
     cliente.Cargo = "Vigilante Lider";
     await clienteWorkflow.SaveAsync(cliente);
 
-    snapshot = await syncService.CriarSnapshotAsync(completo: false);
-    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 1, "Cliente editado nao voltou a ficar pendente no snapshot incremental.");
+    lotes = await ColetarLotesAsync(syncService, completo: false);
+    Assert(RegistrosDaTabela(lotes, "CLIENTES") == 1, "Cliente editado nao voltou a ficar pendente no snapshot incremental.");
 
-    RunLoteamentoTests();
-}
+    // Loteamento em streaming: 5 clientes + 2 salas com lotes de ate 2 registros.
+    for (var i = 1; i <= 4; i++)
+        await clienteWorkflow.SaveAsync(new Cliente
+        {
+            Nome = $"Cliente Lote {i}",
+            Empresa = "Empresa Sync",
+            Cargo = "Vigilante",
+            Status = "Ativo"
+        });
+    await profissionalWorkflow.SaveAsync(new ProfissionalSala { Nome = "Sala Lote 1", Tipo = "Sala", EspecialidadeFuncao = "Atendimento", Ativo = true });
+    await profissionalWorkflow.SaveAsync(new ProfissionalSala { Nome = "Sala Lote 2", Tipo = "Sala", EspecialidadeFuncao = "Atendimento", Ativo = true });
 
-static void RunLoteamentoTests()
-{
-    var snapshot = new AgendaSnapshotRequest { DispositivoId = "TESTE" };
-    var clientes = new AgendaSnapshotTable { Nome = "CLIENTES" };
-    for (var i = 0; i < 5; i++)
-        clientes.Registros.Add(new AgendaSnapshotRecord { IdLocal = $"c{i}", DadosJson = "{}", Hash = $"h{i}" });
-
-    var consultas = new AgendaSnapshotTable { Nome = "CONSULTAS" };
-    for (var i = 0; i < 3; i++)
-        consultas.Registros.Add(new AgendaSnapshotRecord { IdLocal = $"a{i}", DadosJson = "{}", Hash = $"h{i}" });
-
-    snapshot.Tabelas.Add(clientes);
-    snapshot.Tabelas.Add(consultas);
-
-    var lotes = AgendaSnapshotSyncService.DividirEmLotes(snapshot, maxRegistros: 2);
-    Assert(lotes.Count == 4, $"Esperados 4 lotes de ate 2 registros, obtidos {lotes.Count}.");
-
+    lotes = await ColetarLotesAsync(syncService, completo: true, maxRegistros: 2);
     var totalRegistros = lotes.Sum(l => l.Tabelas.Sum(t => t.Registros.Count));
-    Assert(totalRegistros == 8, "Loteamento perdeu ou duplicou registros.");
+    Assert(totalRegistros == 7, $"Loteamento perdeu ou duplicou registros (esperados 7, obtidos {totalRegistros}).");
+    Assert(lotes.Count == 4, $"Esperados 4 lotes de ate 2 registros, obtidos {lotes.Count}.");
     Assert(lotes.All(l => l.Tabelas.Sum(t => t.Registros.Count) <= 2), "Lote excedeu o tamanho maximo.");
     Assert(lotes.All(l => !l.SnapshotCompleto), "Lote parcial nao pode ser marcado como snapshot completo.");
-    Assert(lotes.All(l => l.DispositivoId == "TESTE"), "Lote perdeu o DispositivoId.");
-
-    // Snapshot vazio ainda gera um unico request (valida sessao e registra o dispositivo).
-    var vazio = AgendaSnapshotSyncService.DividirEmLotes(new AgendaSnapshotRequest { DispositivoId = "TESTE" }, maxRegistros: 2);
-    Assert(vazio.Count == 1 && vazio[0].Tabelas.Count == 0, "Snapshot vazio deveria gerar um unico lote vazio.");
-
-    // Nenhum request na rede pode afirmar "snapshot completo": autorizaria o
-    // servidor a marcar como excluido tudo que nao veio naquele request.
-    var vazioCompleto = AgendaSnapshotSyncService.DividirEmLotes(
-        new AgendaSnapshotRequest { DispositivoId = "TESTE", SnapshotCompleto = true }, maxRegistros: 2);
-    Assert(!vazioCompleto[0].SnapshotCompleto, "Request vazio nao pode ser marcado como snapshot completo.");
+    Assert(lotes.All(l => l.DispositivoId == Environment.MachineName), "Lote perdeu o DispositivoId.");
+    Assert(RegistrosDaTabela(lotes, "CLIENTES") == 5, "Total de clientes no loteamento errado.");
+    Assert(RegistrosDaTabela(lotes, "PROFISSIONAIS_SALAS") == 2, "Total de salas no loteamento errado.");
 }
 
-static int RegistrosDaTabela(AgendaSnapshotRequest snapshot, string tabela)
+static async Task<List<AgendaSnapshotRequest>> ColetarLotesAsync(
+    AgendaSnapshotSyncService service, bool completo, int maxRegistros = 1000)
 {
-    var encontrada = snapshot.Tabelas.FirstOrDefault(t => string.Equals(t.Nome, tabela, StringComparison.OrdinalIgnoreCase));
-    return encontrada?.Registros.Count ?? 0;
+    var lotes = new List<AgendaSnapshotRequest>();
+    await foreach (var lote in service.CriarLotesAsync(completo, maxRegistros))
+        lotes.Add(lote);
+    return lotes;
+}
+
+static int RegistrosDaTabela(List<AgendaSnapshotRequest> lotes, string tabela)
+{
+    return lotes.Sum(l => l.Tabelas
+        .Where(t => string.Equals(t.Nome, tabela, StringComparison.OrdinalIgnoreCase))
+        .Sum(t => t.Registros.Count));
 }
 
 static void Assert(bool condition, string message)

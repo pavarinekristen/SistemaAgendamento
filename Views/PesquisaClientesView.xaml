@@ -61,9 +61,13 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
+                <!-- Ordenar pelo cabecalho reordenaria so a pagina atual (100 de
+                     ate 48k linhas), enganando o usuario; a lista ja vem do banco
+                     ordenada por nome. -->
                 <DataGrid x:Name="ClientesDataGrid"
                           Style="{StaticResource SparkDataGridStyle}"
                           SelectionMode="Single"
+                          CanUserSortColumns="False"
                           SelectionChanged="ClientesDataGrid_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="ID" Binding="{Binding IdTexto}" Width="70" />

@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using AgendamentoWpfApp.Data;
+using AgendamentoWpfApp.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace AgendamentoWpfApp.Services;
@@ -44,28 +45,29 @@ internal sealed class AgendaSnapshotSyncService
         // Registros alterados depois deste instante ficam para o proximo sync:
         // a marcacao de sincronizado so alcanca AtualizadoEm <= inicioSnapshot.
         var inicioSnapshot = DateTime.Now;
-        var snapshot = await CriarSnapshotAsync(completo);
-        var lotes = DividirEmLotes(snapshot, MaxRegistrosPorLote);
 
-        // Nenhum lote afirma "snapshot completo": dividido em lotes, cada request
-        // e parcial por definicao, e a regra "ausentes = excluidos" do servidor
-        // marcaria como excluido tudo que ficou nos outros lotes. Exclusoes
-        // chegam ao servidor pelo proprio payload (campo Excluido do registro).
-
-        AgendaSnapshotResponse resultado = null!;
+        var resultado = new AgendaSnapshotResponse();
         var totalEnviado = 0;
+        var tabelasEnviadas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var lote in lotes)
+        // Lotes montados sob demanda direto do banco: o snapshot inteiro nunca
+        // fica em memoria (na primeira carga sao ~48k registros). Marca por
+        // lote: se a conexao cair no meio, o que ja subiu nao e reenviado na
+        // proxima tentativa (o upsert do servidor e idempotente).
+        await foreach (var lote in CriarLotesAsync(completo, MaxRegistrosPorLote))
         {
             resultado = await EnviarLoteAsync(lote);
-            totalEnviado += lote.Tabelas.Sum(t => t.Registros.Count);
 
-            // Marca por lote: se a conexao cair no meio, o que ja subiu nao e
-            // reenviado na proxima tentativa (o upsert do servidor e idempotente).
+            foreach (var tabela in lote.Tabelas)
+            {
+                tabelasEnviadas.Add(tabela.Nome);
+                totalEnviado += tabela.Registros.Count;
+            }
+
             await MarcarRegistrosComoSincronizadosAsync(lote, inicioSnapshot);
         }
 
-        resultado.TotalTabelas = snapshot.Tabelas.Count;
+        resultado.TotalTabelas = tabelasEnviadas.Count;
         resultado.TotalRegistros = totalEnviado;
         return resultado;
     }
@@ -90,59 +92,11 @@ internal sealed class AgendaSnapshotSyncService
             ?? new AgendaSnapshotResponse();
     }
 
-    internal static List<AgendaSnapshotRequest> DividirEmLotes(AgendaSnapshotRequest snapshot, int maxRegistros)
+    internal async IAsyncEnumerable<AgendaSnapshotRequest> CriarLotesAsync(bool completo, int maxRegistros)
     {
-        var lotes = new List<AgendaSnapshotRequest>();
-        AgendaSnapshotRequest? atual = null;
-        var capacidade = 0;
-
-        foreach (var tabela in snapshot.Tabelas)
-        {
-            var offset = 0;
-            do
-            {
-                if (atual == null || capacidade <= 0)
-                {
-                    atual = new AgendaSnapshotRequest
-                    {
-                        DispositivoId = snapshot.DispositivoId,
-                        SnapshotCompleto = false
-                    };
-                    lotes.Add(atual);
-                    capacidade = maxRegistros;
-                }
-
-                var quantidade = Math.Min(capacidade, tabela.Registros.Count - offset);
-                atual.Tabelas.Add(new AgendaSnapshotTable
-                {
-                    Nome = tabela.Nome,
-                    Registros = tabela.Registros.GetRange(offset, quantidade)
-                });
-                offset += quantidade;
-                capacidade -= quantidade;
-            } while (offset < tabela.Registros.Count);
-        }
-
-        // Snapshot vazio ainda gera um request (valida sessao e registra o
-        // dispositivo), mas nunca como "completo": um request completo vazio
-        // autorizaria o servidor a marcar tudo do dispositivo como excluido.
-        if (lotes.Count == 0)
-            lotes.Add(new AgendaSnapshotRequest
-            {
-                DispositivoId = snapshot.DispositivoId,
-                SnapshotCompleto = false
-            });
-
-        return lotes;
-    }
-
-    internal async Task<AgendaSnapshotRequest> CriarSnapshotAsync(bool completo)
-    {
-        var snapshot = new AgendaSnapshotRequest
-        {
-            DispositivoId = Environment.MachineName,
-            SnapshotCompleto = completo
-        };
+        maxRegistros = Math.Max(1, maxRegistros);
+        var dispositivoId = Environment.MachineName;
+        var gerouLote = false;
 
         await using var context = _database.CreateContext();
         var connection = context.Database.GetDbConnection();
@@ -152,6 +106,14 @@ internal sealed class AgendaSnapshotSyncService
 
         try
         {
+            // Nenhum lote afirma "snapshot completo": dividido em lotes, cada
+            // request e parcial por definicao, e a regra "ausentes = excluidos"
+            // do servidor marcaria como excluido o que ficou nos outros lotes.
+            // Exclusoes chegam pelo proprio payload (campo Excluido do registro).
+            AgendaSnapshotRequest? atual = null;
+            AgendaSnapshotTable? tabelaAtual = null;
+            var capacidade = 0;
+
             foreach (var tableName in ListarTabelasSqlite(connection))
             {
                 var colunas = await ListarColunasSqliteAsync(connection, tableName);
@@ -159,7 +121,6 @@ internal sealed class AgendaSnapshotSyncService
                     && colunas.Contains("AtualizadoEm")
                     && colunas.Contains("SincronizadoEm");
 
-                var tabela = new AgendaSnapshotTable { Nome = tableName };
                 await using var command = connection.CreateCommand();
                 var nomeEscapado = EscaparIdentificadorSqlite(tableName);
                 command.CommandText = incremental
@@ -167,6 +128,7 @@ internal sealed class AgendaSnapshotSyncService
                     : $"SELECT * FROM \"{nomeEscapado}\"";
                 await using var reader = await command.ExecuteReaderAsync();
 
+                tabelaAtual = null;
                 while (await reader.ReadAsync())
                 {
                     var registro = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -174,24 +136,54 @@ internal sealed class AgendaSnapshotSyncService
                         registro[reader.GetName(i)] = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
 
                     var dadosJson = JsonSerializer.Serialize(registro, JsonOptions);
-                    tabela.Registros.Add(new AgendaSnapshotRecord
+
+                    if (atual == null)
+                    {
+                        atual = new AgendaSnapshotRequest { DispositivoId = dispositivoId };
+                        capacidade = maxRegistros;
+                        tabelaAtual = null;
+                    }
+
+                    if (tabelaAtual == null)
+                    {
+                        tabelaAtual = new AgendaSnapshotTable { Nome = tableName };
+                        atual.Tabelas.Add(tabelaAtual);
+                    }
+
+                    tabelaAtual.Registros.Add(new AgendaSnapshotRecord
                     {
                         IdLocal = ObterIdLocal(registro, dadosJson),
                         DadosJson = dadosJson,
                         Hash = Hash(dadosJson)
                     });
-                }
 
-                snapshot.Tabelas.Add(tabela);
+                    if (--capacidade == 0)
+                    {
+                        gerouLote = true;
+                        yield return atual;
+                        atual = null;
+                        tabelaAtual = null;
+                    }
+                }
             }
+
+            if (atual != null)
+            {
+                gerouLote = true;
+                yield return atual;
+            }
+
+            // Nada pendente: um request vazio ainda valida a sessao e registra
+            // o dispositivo (e nunca afirma snapshot completo: um "completo"
+            // vazio autorizaria o servidor a excluir tudo do dispositivo).
+            if (!gerouLote)
+                yield return new AgendaSnapshotRequest { DispositivoId = dispositivoId };
         }
         finally
         {
             if (deveFechar)
                 await connection.CloseAsync();
         }
-
-        return snapshot;
     }
 
     internal async Task MarcarRegistrosComoSincronizadosAsync(AgendaSnapshotRequest lote, DateTime inicioSnapshot)
@@ -205,22 +197,25 @@ internal sealed class AgendaSnapshotSyncService
                 continue;
 
             var ids = tabela.Registros.Select(r => r.IdLocal).ToList();
-
-            // Marca apenas o que foi enviado neste lote e nao mudou desde a montagem
-            // do snapshot; edicao durante o envio (AtualizadoEm > inicio) segue pendente.
-            if (tabela.Nome.Equals("CLIENTES", StringComparison.OrdinalIgnoreCase))
-                await context.Clientes
-                    .Where(c => ids.Contains(c.IdLocal) && c.AtualizadoEm <= inicioSnapshot)
-                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.SincronizadoEm, agora));
-            else if (tabela.Nome.Equals("CONSULTAS", StringComparison.OrdinalIgnoreCase))
-                await context.Consultas
-                    .Where(c => ids.Contains(c.IdLocal) && c.AtualizadoEm <= inicioSnapshot)
-                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.SincronizadoEm, agora));
-            else if (tabela.Nome.Equals("PROFISSIONAIS_SALAS", StringComparison.OrdinalIgnoreCase))
-                await context.ProfissionaisSalas
-                    .Where(p => ids.Contains(p.IdLocal) && p.AtualizadoEm <= inicioSnapshot)
-                    .ExecuteUpdateAsync(s => s.SetProperty(p => p.SincronizadoEm, agora));
+            await (tabela.Nome.ToUpperInvariant() switch
+            {
+                "CLIENTES" => MarcarTabelaAsync(context.Clientes, ids, inicioSnapshot, agora),
+                "CONSULTAS" => MarcarTabelaAsync(context.Consultas, ids, inicioSnapshot, agora),
+                "PROFISSIONAIS_SALAS" => MarcarTabelaAsync(context.ProfissionaisSalas, ids, inicioSnapshot, agora),
+                _ => Task.CompletedTask
+            });
         }
+    }
+
+    // Regra unica de marcacao para todas as tabelas sincronizadas: apenas o que
+    // foi enviado neste lote e nao mudou desde a montagem do snapshot; edicao
+    // durante o envio (AtualizadoEm > inicioSnapshot) segue pendente.
+    private static Task MarcarTabelaAsync<T>(DbSet<T> registros, List<string> ids, DateTime inicioSnapshot, DateTime agora)
+        where T : class, IRegistroSincronizavel
+    {
+        return registros
+            .Where(r => ids.Contains(r.IdLocal) && r.AtualizadoEm <= inicioSnapshot)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.SincronizadoEm, agora));
     }
 
     private static IReadOnlyList<string> ListarTabelasSqlite(System.Data.Common.DbConnection connection)

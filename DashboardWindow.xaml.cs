@@ -10,7 +10,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
@@ -37,10 +36,12 @@ public partial class DashboardWindow : Window
     private readonly BulkObservableCollection<ProfissionalSala> _profissionaisSalas = new();
     private readonly BulkObservableCollection<Consulta> _relatorioLaudos = new();
     private readonly List<Consulta> _consultasHoje = new();
-    private DispatcherTimer? _clienteFilterDebounceTimer;
+    private readonly DispatcherTimer _clienteFilterDebounceTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
     private int _clientesPaginaAtual;
     private int _clientesTotalFiltrado;
-    private int _clientesTotalGeral;
+    // -1 = ainda nao contado; o total geral so muda em save/delete/restore,
+    // entao a pesquisa por tecla nao reconta o banco inteiro.
+    private int _clientesTotalGeral = -1;
     private readonly HashSet<string> _lembretesNotificados = new();
     private DispatcherTimer? _notificationTimer;
     private bool _isSidebarCollapsed = true;
@@ -75,7 +76,6 @@ public partial class DashboardWindow : Window
         PesquisaClientesView.SetItemsSource(_clientes);
         PesquisaClientesView.PreviousPageRequested += PesquisaClientesView_PreviousPageRequested;
         PesquisaClientesView.NextPageRequested += PesquisaClientesView_NextPageRequested;
-        _clienteFilterDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
         _clienteFilterDebounceTimer.Tick += ClienteFilterDebounceTimer_Tick;
         AgendaView.SetClienteCandidatesSource(Array.Empty<Cliente>());
         AgendaView.SetProfissionaisSource(_profissionaisSalas);
@@ -142,7 +142,7 @@ public partial class DashboardWindow : Window
     private void DashboardWindow_Closed(object? sender, EventArgs e)
     {
         _notificationTimer?.Stop();
-        _clienteFilterDebounceTimer?.Stop();
+        _clienteFilterDebounceTimer.Stop();
         _workspaceService.Dispose();
     }
 
@@ -214,24 +214,29 @@ public partial class DashboardWindow : Window
         Application.Current.Shutdown();
     }
 
+    private bool ClientesComFiltro =>
+        !string.IsNullOrWhiteSpace(PesquisaClientesView.SearchTerm) ||
+        !string.IsNullOrWhiteSpace(PesquisaClientesView.SelectedEmpresaFilter);
+
     private async Task LoadClientesAsync()
     {
         var empresas = await _clienteWorkflow.ListEmpresasAsync();
         PesquisaClientesView.SetEmpresaOptions(empresas.Prepend("").ToList());
-        await RefreshClientesPageAsync(resetPagina: true);
+        await RefreshClientesPageAsync(resetPagina: true, recontarTotalGeral: true);
     }
 
-    private async Task RefreshClientesPageAsync(bool resetPagina)
+    private async Task RefreshClientesPageAsync(bool resetPagina, bool recontarTotalGeral = false)
     {
         var termo = PesquisaClientesView.SearchTerm;
         var empresa = PesquisaClientesView.SelectedEmpresaFilter;
-        var temFiltro = !string.IsNullOrWhiteSpace(termo) || !string.IsNullOrWhiteSpace(empresa);
+        var temFiltro = ClientesComFiltro;
 
         // Pagina alvo capturada no inicio: dois refreshes intercalados (clique
         // rapido no paginador) ficam cada um autoconsistente; o ultimo vence.
         var paginaAlvo = resetPagina ? 0 : Math.Max(0, _clientesPaginaAtual);
 
-        _clientesTotalGeral = await _clienteWorkflow.CountAsync();
+        if (recontarTotalGeral || _clientesTotalGeral < 0)
+            _clientesTotalGeral = await _clienteWorkflow.CountAsync();
         _clientesTotalFiltrado = temFiltro
             ? await _clienteWorkflow.CountAsync(termo, empresa)
             : _clientesTotalGeral;
@@ -433,12 +438,9 @@ public partial class DashboardWindow : Window
 
     private void UpdateSummary()
     {
-        ClientesView.SetCount(_clientesTotalGeral, _clientesTotalGeral, false);
-        PesquisaClientesView.SetCount(
-            _clientesTotalGeral,
-            _clientesTotalFiltrado,
-            !string.IsNullOrWhiteSpace(PesquisaClientesView.SearchTerm) ||
-            !string.IsNullOrWhiteSpace(PesquisaClientesView.SelectedEmpresaFilter));
+        var totalGeral = Math.Max(0, _clientesTotalGeral);
+        ClientesView.SetCount(totalGeral, totalGeral, false);
+        PesquisaClientesView.SetCount(totalGeral, _clientesTotalFiltrado, ClientesComFiltro);
     }
 
     private void UpdateSyncStatus(string message, bool isError)
@@ -463,7 +465,7 @@ public partial class DashboardWindow : Window
             "Sistema: SparkCore (SC)\n" +
             $"Versao: {GetAppVersion()}\n" +
             $"API: {SessionState.BaseUrl}\n" +
-            $"Clientes cadastrados: {_clientesTotalGeral}\n" +
+            $"Clientes cadastrados: {Math.Max(0, _clientesTotalGeral)}\n" +
             $"Profissionais/salas carregados: {_profissionaisSalas.Count}\n" +
             $"Consultas no dia selecionado: {_consultas.Count}\n" +
             $"Ultimo sucesso sync: {FormatDateTime(syncStatus.LastSuccessAt)}\n" +

@@ -11,16 +11,13 @@ public partial class DashboardWindow
     private void PesquisaClientesView_FilterChanged(object? sender, EventArgs e)
     {
         // Espera o usuario parar de digitar antes de consultar o banco.
-        if (_clienteFilterDebounceTimer == null)
-            return;
-
         _clienteFilterDebounceTimer.Stop();
         _clienteFilterDebounceTimer.Start();
     }
 
     private async void ClienteFilterDebounceTimer_Tick(object? sender, EventArgs e)
     {
-        _clienteFilterDebounceTimer?.Stop();
+        _clienteFilterDebounceTimer.Stop();
 
         try
         {
@@ -133,7 +130,7 @@ public partial class DashboardWindow
         await _clienteWorkflow.DeleteAsync(_selectedCliente);
         ClearClientForm();
         UpdateDetails(null);
-        await RefreshClientesPageAsync(resetPagina: false);
+        await RefreshClientesPageAsync(resetPagina: false, recontarTotalGeral: true);
         SetFormStatus("Cliente excluido.", false);
     }
 

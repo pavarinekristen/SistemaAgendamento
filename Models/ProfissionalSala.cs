@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using AgendamentoWpfApp.Services.Validation;
@@ -6,7 +6,7 @@ using AgendamentoWpfApp.Services.Validation;
 namespace AgendamentoWpfApp.Models;
 
 [Table("PROFISSIONAIS_SALAS")]
-internal sealed class ProfissionalSala
+internal sealed class ProfissionalSala : IRegistroSincronizavel
 {
     [Key]
     public int Id { get; set; }

@@ -6,7 +6,7 @@ using AgendamentoWpfApp.Services.Validation;
 namespace AgendamentoWpfApp.Models;
 
 [Table("CLIENTES")]
-internal sealed class Cliente
+internal sealed class Cliente : IRegistroSincronizavel
 {
     [Key]
     public int Id { get; set; }
