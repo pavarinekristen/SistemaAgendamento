@@ -46,6 +46,21 @@ internal sealed class AgendaWorkspaceService : IDisposable
         return _clienteStore.SearchAsync(term, take);
     }
 
+    public Task<List<Cliente>> SearchClientesPageAsync(string term, string empresa, int skip, int take)
+    {
+        return _clienteStore.SearchPageAsync(term, empresa, skip, take);
+    }
+
+    public Task<int> CountClientesAsync(string term = "", string empresa = "")
+    {
+        return _clienteStore.CountAsync(term, empresa);
+    }
+
+    public Task<List<string>> ListEmpresasClientesAsync()
+    {
+        return _clienteStore.ListEmpresasAsync();
+    }
+
     public Task<Cliente?> FindClienteByIdLocalAsync(string idLocal)
     {
         return _clienteStore.FindByIdLocalAsync(idLocal);

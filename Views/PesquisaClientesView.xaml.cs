@@ -12,6 +12,8 @@ public partial class PesquisaClientesView : UserControl
     public event EventHandler? FilterChanged;
     public event EventHandler? SelectionChanged;
     public event EventHandler? EditRequested;
+    public event EventHandler? PreviousPageRequested;
+    public event EventHandler? NextPageRequested;
 
     public PesquisaClientesView()
     {
@@ -38,6 +40,15 @@ public partial class PesquisaClientesView : UserControl
         CountTextBlock.Text = hasSearch
             ? $"{visible} de {total} funcionario(s) encontrado(s)"
             : $"{total} funcionario(s) cadastrado(s)";
+    }
+
+    public void SetPageInfo(int pagina, int totalPaginas, int exibindoDe, int exibindoAte, int totalFiltrado)
+    {
+        PageInfoTextBlock.Text = totalFiltrado == 0
+            ? "Nenhum funcionario para exibir."
+            : $"Pagina {pagina} de {totalPaginas} — exibindo {exibindoDe} a {exibindoAte} de {totalFiltrado}";
+        PaginaAnteriorButton.IsEnabled = pagina > 1;
+        ProximaPaginaButton.IsEnabled = pagina < totalPaginas;
     }
 
     internal void SelectItem(Cliente? cliente)
@@ -75,6 +86,16 @@ public partial class PesquisaClientesView : UserControl
     private void EditarButton_Click(object sender, RoutedEventArgs e)
     {
         EditRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void PaginaAnteriorButton_Click(object sender, RoutedEventArgs e)
+    {
+        PreviousPageRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ProximaPaginaButton_Click(object sender, RoutedEventArgs e)
+    {
+        NextPageRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private static string ValueOrDash(string value)

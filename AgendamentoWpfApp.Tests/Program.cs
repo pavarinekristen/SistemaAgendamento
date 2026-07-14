@@ -152,8 +152,8 @@ static async Task RunWorkflowTestsAsync(string databasePath)
 
     var clientes = await clienteWorkflow.LoadAsync();
     Assert(clientes.Count == 1, "Cliente nao foi salvo pelo workflow.");
-    Assert(clienteWorkflow.MatchesSearch(clientes[0], "workflow"), "Busca por nome falhou.");
-    Assert(clienteWorkflow.MatchesSearch(clientes[0], "12345678909"), "Busca por CPF falhou.");
+    Assert((await clienteWorkflow.SearchAsync("workflow")).Count == 1, "Busca por nome falhou.");
+    Assert((await clienteWorkflow.SearchAsync("12345678909")).Count == 1, "Busca por CPF falhou.");
 
     var duplicado = new Cliente
     {
@@ -172,13 +172,29 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     Assert(cliente.Id > 0, "Novo cliente nao recebeu ID apos salvar.");
     Assert(duplicado.Id == cliente.Id + 1, "IDs de novos clientes nao seguem a sequencia.");
 
-    // Busca por ID: filtro em memoria (Pesquisa) e consulta no banco (Agenda).
-    Assert(clienteWorkflow.MatchesSearch(cliente, cliente.Id.ToString()), "Filtro por ID falhou.");
-    Assert(clienteWorkflow.MatchesSearch(cliente, cliente.Id.ToString("0000")), "Filtro por ID com zeros a esquerda falhou.");
-    Assert(!clienteWorkflow.MatchesSearch(cliente, duplicado.Id.ToString("0000")), "Filtro por ID retornou cliente errado.");
+    // Busca por ID direto no banco (com e sem zeros a esquerda). Termo numerico
+    // tambem casa com CPF/RG/telefone por LIKE, entao valida presenca, nao contagem.
+    var porIdSimples = await clienteWorkflow.SearchAsync(cliente.Id.ToString());
+    Assert(porIdSimples.Any(c => c.IdLocal == cliente.IdLocal), "Busca por ID falhou.");
 
     var porId = await clienteWorkflow.SearchAsync(duplicado.Id.ToString("0000"));
     Assert(porId.Count == 1 && porId[0].IdLocal == duplicado.IdLocal, "Busca por ID no banco falhou.");
+
+    // Pesquisa paginada no banco (grade principal nao carrega mais tudo em memoria).
+    Assert(await clienteWorkflow.CountAsync() == 2, "Contagem geral de clientes falhou.");
+    Assert(await clienteWorkflow.CountAsync("duplicado") == 1, "Contagem filtrada por termo falhou.");
+    Assert(await clienteWorkflow.CountAsync("", "empresa teste") == 2, "Contagem filtrada por empresa falhou.");
+    Assert(await clienteWorkflow.CountAsync("duplicado", "Outra Empresa") == 0, "Filtro por empresa nao restringiu a contagem.");
+
+    var pagina1 = await clienteWorkflow.SearchPageAsync("", "", skip: 0, take: 10);
+    Assert(pagina1.Count == 2, "Pagina unica deveria trazer os dois clientes.");
+    Assert(pagina1[0].Nome == "Cliente Duplicado", "Paginacao nao ordenou por nome.");
+
+    var pagina2 = await clienteWorkflow.SearchPageAsync("", "", skip: 1, take: 10);
+    Assert(pagina2.Count == 1 && pagina2[0].IdLocal == cliente.IdLocal, "Skip da paginacao falhou.");
+
+    var empresas = await clienteWorkflow.ListEmpresasAsync();
+    Assert(empresas.Count == 1 && empresas[0] == "Empresa Teste", "Lista de empresas distintas falhou.");
 
     var sala1 = new ProfissionalSala
     {

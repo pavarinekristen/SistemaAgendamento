@@ -25,6 +25,21 @@ internal sealed class ClienteWorkflowService
         return _workspaceService.SearchClientesAsync(term, take);
     }
 
+    public Task<List<Cliente>> SearchPageAsync(string term, string empresa, int skip, int take)
+    {
+        return _workspaceService.SearchClientesPageAsync(term, empresa, skip, take);
+    }
+
+    public Task<int> CountAsync(string term = "", string empresa = "")
+    {
+        return _workspaceService.CountClientesAsync(term, empresa);
+    }
+
+    public Task<List<string>> ListEmpresasAsync()
+    {
+        return _workspaceService.ListEmpresasClientesAsync();
+    }
+
     public Task<Cliente?> FindByIdLocalAsync(string idLocal)
     {
         return _workspaceService.FindClienteByIdLocalAsync(idLocal);
@@ -42,31 +57,5 @@ internal sealed class ClienteWorkflowService
     public Task DeleteAsync(Cliente cliente)
     {
         return _workspaceService.DeleteClienteAsync(cliente);
-    }
-
-    public bool MatchesSearch(Cliente cliente, string term)
-    {
-        if (string.IsNullOrWhiteSpace(term))
-            return true;
-
-        term = term.Trim();
-
-        // Termo numerico tambem encontra pelo ID (ex.: "12" ou "0012").
-        if (int.TryParse(term, out var idBusca) && idBusca > 0 && cliente.Id == idBusca)
-            return true;
-
-        return Contains(cliente.Nome, term)
-            || Contains(cliente.Empresa, term)
-            || Contains(cliente.Cargo, term)
-            || Contains(cliente.Cpf, term)
-            || Contains(cliente.Rg, term)
-            || Contains(cliente.Email, term)
-            || Contains(cliente.Telefone, term)
-            || Contains(cliente.Status, term);
-    }
-
-    private static bool Contains(string value, string term)
-    {
-        return (value ?? string.Empty).IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

@@ -8,25 +8,51 @@ namespace AgendamentoWpfApp;
 
 public partial class DashboardWindow
 {
-    private bool FilterCliente(object item)
-    {
-        if (item is not Cliente cliente)
-            return false;
-
-        var empresa = PesquisaClientesView.SelectedEmpresaFilter;
-        if (!string.IsNullOrWhiteSpace(empresa) &&
-            !string.Equals(cliente.Empresa, empresa, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        return _clienteWorkflow.MatchesSearch(cliente, PesquisaClientesView.SearchTerm);
-    }
-
     private void PesquisaClientesView_FilterChanged(object? sender, EventArgs e)
     {
-        _clientesView.Refresh();
-        UpdateSummary();
+        // Espera o usuario parar de digitar antes de consultar o banco.
+        if (_clienteFilterDebounceTimer == null)
+            return;
+
+        _clienteFilterDebounceTimer.Stop();
+        _clienteFilterDebounceTimer.Start();
+    }
+
+    private async void ClienteFilterDebounceTimer_Tick(object? sender, EventArgs e)
+    {
+        _clienteFilterDebounceTimer?.Stop();
+
+        try
+        {
+            await RefreshClientesPageAsync(resetPagina: true);
+        }
+        catch (Exception ex)
+        {
+            SetFormStatus($"Falha ao pesquisar clientes: {ex.Message}", true);
+        }
+    }
+
+    private async void PesquisaClientesView_PreviousPageRequested(object? sender, EventArgs e)
+    {
+        await ChangeClientesPageAsync(-1);
+    }
+
+    private async void PesquisaClientesView_NextPageRequested(object? sender, EventArgs e)
+    {
+        await ChangeClientesPageAsync(1);
+    }
+
+    private async Task ChangeClientesPageAsync(int delta)
+    {
+        try
+        {
+            _clientesPaginaAtual = Math.Max(0, _clientesPaginaAtual + delta);
+            await RefreshClientesPageAsync(resetPagina: false);
+        }
+        catch (Exception ex)
+        {
+            SetFormStatus($"Falha ao trocar de pagina: {ex.Message}", true);
+        }
     }
 
     private void PesquisaClientesView_SelectionChanged(object? sender, EventArgs e)
@@ -73,6 +99,7 @@ public partial class DashboardWindow
         }
 
         await LoadClientesAsync();
+        // O cliente salvo pode nao estar na pagina atual; selecionar so quando visivel.
         PesquisaClientesView.SelectItem(_clientes.FirstOrDefault(c => c.IdLocal == cliente.IdLocal));
         UpdateDetails(cliente);
         SetFormStatus("Cliente salvo. Ele ja pode ser agendado na aba Agenda.", false);
@@ -103,11 +130,9 @@ public partial class DashboardWindow
             return;
 
         await _clienteWorkflow.DeleteAsync(_selectedCliente);
-        _clientes.Remove(_selectedCliente);
         ClearClientForm();
         UpdateDetails(null);
-        _clientesView.Refresh();
-        UpdateSummary();
+        await RefreshClientesPageAsync(resetPagina: false);
         SetFormStatus("Cliente excluido.", false);
     }
 

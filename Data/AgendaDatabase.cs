@@ -33,6 +33,11 @@ internal sealed class AgendaDatabase
         // "database is locked" quando o sync automatico roda junto com a tela.
         await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
         await EnsureConsultaLaudoColumnsAsync(context);
+        // Atende o ORDER BY Nome, Cpf da grade paginada de clientes sem B-tree
+        // temporario sobre as ~48k linhas. Nao inclui Excluido: o EF gera
+        // "WHERE NOT Excluido", que o planner do SQLite nao usa como igualdade.
+        await context.Database.ExecuteSqlRawAsync(
+            "CREATE INDEX IF NOT EXISTS IX_CLIENTES_Nome_Cpf ON CLIENTES (Nome, Cpf)");
     }
 
     private static async Task EnsureConsultaLaudoColumnsAsync(AgendaDbContext context)

@@ -39,13 +39,64 @@ internal sealed class ClienteLocalStore
     public async Task<List<Cliente>> SearchAsync(string term, int take = 50, bool incluirExcluidos = false)
     {
         await using var context = _database.CreateContext();
-        term = (term ?? string.Empty).Trim();
         take = System.Math.Clamp(take <= 0 ? 50 : take, 10, 100);
+
+        return await AplicarFiltros(context, term, empresa: "", incluirExcluidos)
+            .OrderBy(c => c.Nome)
+            .ThenBy(c => c.Cpf)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<List<Cliente>> SearchPageAsync(string term, string empresa, int skip, int take, bool incluirExcluidos = false)
+    {
+        await using var context = _database.CreateContext();
+        skip = System.Math.Max(0, skip);
+        take = System.Math.Clamp(take <= 0 ? 100 : take, 10, 500);
+
+        return await AplicarFiltros(context, term, empresa, incluirExcluidos)
+            .OrderBy(c => c.Nome)
+            .ThenBy(c => c.Cpf)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<int> CountAsync(string term = "", string empresa = "", bool incluirExcluidos = false)
+    {
+        await using var context = _database.CreateContext();
+        return await AplicarFiltros(context, term, empresa, incluirExcluidos).CountAsync();
+    }
+
+    public async Task<List<string>> ListEmpresasAsync()
+    {
+        await using var context = _database.CreateContext();
+        var empresas = await context.Clientes.AsNoTracking()
+            .Where(c => !c.Excluido && c.Empresa != null && c.Empresa != "")
+            .Select(c => c.Empresa)
+            .Distinct()
+            .OrderBy(e => e)
+            .ToListAsync();
+
+        // O Distinct do SQLite diferencia maiusculas; a lista final nao deve.
+        return empresas
+            .Distinct(System.StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IQueryable<Cliente> AplicarFiltros(AgendaDbContext context, string term, string empresa, bool incluirExcluidos)
+    {
+        term = (term ?? string.Empty).Trim();
+        empresa = (empresa ?? string.Empty).Trim();
 
         var query = context.Clientes.AsNoTracking();
 
         if (!incluirExcluidos)
             query = query.Where(c => !c.Excluido);
+
+        // LIKE sem curinga: igualdade sem diferenciar maiusculas/minusculas.
+        if (!string.IsNullOrWhiteSpace(empresa))
+            query = query.Where(c => EF.Functions.Like(c.Empresa, empresa));
 
         if (!string.IsNullOrWhiteSpace(term))
         {
@@ -58,14 +109,13 @@ internal sealed class ClienteLocalStore
                 EF.Functions.Like(c.Empresa, $"%{term}%") ||
                 EF.Functions.Like(c.Cargo, $"%{term}%") ||
                 EF.Functions.Like(c.Cpf, $"%{term}%") ||
-                EF.Functions.Like(c.Rg, $"%{term}%"));
+                EF.Functions.Like(c.Rg, $"%{term}%") ||
+                EF.Functions.Like(c.Telefone, $"%{term}%") ||
+                EF.Functions.Like(c.Email, $"%{term}%") ||
+                EF.Functions.Like(c.Status, $"%{term}%"));
         }
 
-        return await query
-            .OrderBy(c => c.Nome)
-            .ThenBy(c => c.Cpf)
-            .Take(take)
-            .ToListAsync();
+        return query;
     }
 
     public async Task<Cliente?> FindByIdLocalAsync(string idLocal, bool incluirExcluidos = false)

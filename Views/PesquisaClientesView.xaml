@@ -55,22 +55,57 @@
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource SparkCardStyle}" Padding="6">
-            <DataGrid x:Name="ClientesDataGrid"
-                      Style="{StaticResource SparkDataGridStyle}"
-                      SelectionMode="Single"
-                      SelectionChanged="ClientesDataGrid_SelectionChanged">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="ID" Binding="{Binding IdTexto}" Width="70" />
-                    <DataGridTextColumn Header="NOME" Binding="{Binding Nome}" Width="1.5*" />
-                    <DataGridTextColumn Header="EMPRESA" Binding="{Binding Empresa}" Width="1.2*" />
-                    <DataGridTextColumn Header="CARGO" Binding="{Binding Cargo}" Width="1.1*" />
-                    <DataGridTextColumn Header="CPF" Binding="{Binding CpfFormatado}" Width="130" />
-                    <DataGridTextColumn Header="RG" Binding="{Binding Rg}" Width="110" />
-                    <DataGridTextColumn Header="TELEFONE" Binding="{Binding TelefoneFormatado}" Width="140" />
-                    <DataGridTextColumn Header="E-MAIL" Binding="{Binding Email}" Width="1.2*" />
-                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="100" />
-                </DataGrid.Columns>
-            </DataGrid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <DataGrid x:Name="ClientesDataGrid"
+                          Style="{StaticResource SparkDataGridStyle}"
+                          SelectionMode="Single"
+                          SelectionChanged="ClientesDataGrid_SelectionChanged">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding IdTexto}" Width="70" />
+                        <DataGridTextColumn Header="NOME" Binding="{Binding Nome}" Width="1.5*" />
+                        <DataGridTextColumn Header="EMPRESA" Binding="{Binding Empresa}" Width="1.2*" />
+                        <DataGridTextColumn Header="CARGO" Binding="{Binding Cargo}" Width="1.1*" />
+                        <DataGridTextColumn Header="CPF" Binding="{Binding CpfFormatado}" Width="130" />
+                        <DataGridTextColumn Header="RG" Binding="{Binding Rg}" Width="110" />
+                        <DataGridTextColumn Header="TELEFONE" Binding="{Binding TelefoneFormatado}" Width="140" />
+                        <DataGridTextColumn Header="E-MAIL" Binding="{Binding Email}" Width="1.2*" />
+                        <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="100" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Grid Grid.Row="1" Margin="10,8,10,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="PageInfoTextBlock"
+                               Foreground="{StaticResource SparkMutedBrush}"
+                               FontSize="13"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="PaginaAnteriorButton"
+                                Content="Anterior"
+                                Style="{StaticResource SparkSecondaryButtonStyle}"
+                                MinWidth="96"
+                                IsEnabled="False"
+                                Click="PaginaAnteriorButton_Click" />
+                        <Button x:Name="ProximaPaginaButton"
+                                Content="Proxima"
+                                Style="{StaticResource SparkSecondaryButtonStyle}"
+                                MinWidth="96"
+                                Margin="10,0,0,0"
+                                IsEnabled="False"
+                                Click="ProximaPaginaButton_Click" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </Border>
 
         <Border Grid.Row="3"

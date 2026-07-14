@@ -29,12 +29,18 @@ public partial class DashboardWindow : Window
     private readonly ProfissionalSalaWorkflowService _profissionalWorkflow;
     private readonly LaudoPdfService _laudoPdfService;
     private readonly LocalSqliteBackupService _backupService;
+    // A grade de pesquisa mostra apenas uma pagina; filtro e contagem rodam no SQLite
+    // (carregar os ~48k cadastros de uma vez travava a abertura do dashboard).
+    private const int ClientesPorPagina = 100;
     private readonly BulkObservableCollection<Cliente> _clientes = new();
     private readonly BulkObservableCollection<Consulta> _consultas = new();
     private readonly BulkObservableCollection<ProfissionalSala> _profissionaisSalas = new();
     private readonly BulkObservableCollection<Consulta> _relatorioLaudos = new();
-    private readonly ICollectionView _clientesView;
     private readonly List<Consulta> _consultasHoje = new();
+    private DispatcherTimer? _clienteFilterDebounceTimer;
+    private int _clientesPaginaAtual;
+    private int _clientesTotalFiltrado;
+    private int _clientesTotalGeral;
     private readonly HashSet<string> _lembretesNotificados = new();
     private DispatcherTimer? _notificationTimer;
     private bool _isSidebarCollapsed = true;
@@ -66,9 +72,11 @@ public partial class DashboardWindow : Window
         ConfiguracoesView.ConfigureBackupService(_backupService);
         ConfiguracoesView.RestoreBackupRequested += ConfiguracoesView_RestoreBackupRequested;
 
-        _clientesView = CollectionViewSource.GetDefaultView(_clientes);
-        _clientesView.Filter = FilterCliente;
-        PesquisaClientesView.SetItemsSource(_clientesView);
+        PesquisaClientesView.SetItemsSource(_clientes);
+        PesquisaClientesView.PreviousPageRequested += PesquisaClientesView_PreviousPageRequested;
+        PesquisaClientesView.NextPageRequested += PesquisaClientesView_NextPageRequested;
+        _clienteFilterDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        _clienteFilterDebounceTimer.Tick += ClienteFilterDebounceTimer_Tick;
         AgendaView.SetClienteCandidatesSource(Array.Empty<Cliente>());
         AgendaView.SetProfissionaisSource(_profissionaisSalas);
         AgendaView.SetConsultasSource(_consultas);
@@ -134,6 +142,7 @@ public partial class DashboardWindow : Window
     private void DashboardWindow_Closed(object? sender, EventArgs e)
     {
         _notificationTimer?.Stop();
+        _clienteFilterDebounceTimer?.Stop();
         _workspaceService.Dispose();
     }
 
@@ -207,16 +216,39 @@ public partial class DashboardWindow : Window
 
     private async Task LoadClientesAsync()
     {
-        _clientes.Reset(await _clienteWorkflow.LoadAsync());
+        var empresas = await _clienteWorkflow.ListEmpresasAsync();
+        PesquisaClientesView.SetEmpresaOptions(empresas.Prepend("").ToList());
+        await RefreshClientesPageAsync(resetPagina: true);
+    }
 
-        _clientesView.Refresh();
-        var empresas = _clientes
-            .Select(c => c.Empresa)
-            .Where(e => !string.IsNullOrWhiteSpace(e))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Prepend("")
-            .ToList();
-        PesquisaClientesView.SetEmpresaOptions(empresas);
+    private async Task RefreshClientesPageAsync(bool resetPagina)
+    {
+        var termo = PesquisaClientesView.SearchTerm;
+        var empresa = PesquisaClientesView.SelectedEmpresaFilter;
+        var temFiltro = !string.IsNullOrWhiteSpace(termo) || !string.IsNullOrWhiteSpace(empresa);
+
+        if (resetPagina)
+            _clientesPaginaAtual = 0;
+
+        _clientesTotalGeral = await _clienteWorkflow.CountAsync();
+        _clientesTotalFiltrado = temFiltro
+            ? await _clienteWorkflow.CountAsync(termo, empresa)
+            : _clientesTotalGeral;
+
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(_clientesTotalFiltrado / (double)ClientesPorPagina));
+        _clientesPaginaAtual = Math.Clamp(_clientesPaginaAtual, 0, totalPaginas - 1);
+
+        var pagina = await _clienteWorkflow.SearchPageAsync(
+            termo,
+            empresa,
+            _clientesPaginaAtual * ClientesPorPagina,
+            ClientesPorPagina);
+        _clientes.Reset(pagina);
+
+        var exibindoDe = _clientesTotalFiltrado == 0 ? 0 : _clientesPaginaAtual * ClientesPorPagina + 1;
+        var exibindoAte = _clientesPaginaAtual * ClientesPorPagina + pagina.Count;
+        PesquisaClientesView.SetPageInfo(_clientesPaginaAtual + 1, totalPaginas, exibindoDe, exibindoAte, _clientesTotalFiltrado);
+
         UpdateSummary();
         UpdateSyncDetails();
     }
@@ -399,12 +431,10 @@ public partial class DashboardWindow : Window
 
     private void UpdateSummary()
     {
-        var total = _clientes.Count;
-        var visiveis = _clientesView.Cast<object>().Count();
-        ClientesView.SetCount(total, total, false);
+        ClientesView.SetCount(_clientesTotalGeral, _clientesTotalGeral, false);
         PesquisaClientesView.SetCount(
-            total,
-            visiveis,
+            _clientesTotalGeral,
+            _clientesTotalFiltrado,
             !string.IsNullOrWhiteSpace(PesquisaClientesView.SearchTerm) ||
             !string.IsNullOrWhiteSpace(PesquisaClientesView.SelectedEmpresaFilter));
     }
@@ -431,7 +461,7 @@ public partial class DashboardWindow : Window
             "Sistema: SparkCore (SC)\n" +
             $"Versao: {GetAppVersion()}\n" +
             $"API: {SessionState.BaseUrl}\n" +
-            $"Clientes carregados: {_clientes.Count}\n" +
+            $"Clientes cadastrados: {_clientesTotalGeral}\n" +
             $"Profissionais/salas carregados: {_profissionaisSalas.Count}\n" +
             $"Consultas no dia selecionado: {_consultas.Count}\n" +
             $"Ultimo sucesso sync: {FormatDateTime(syncStatus.LastSuccessAt)}\n" +
