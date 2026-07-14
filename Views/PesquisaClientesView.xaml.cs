@@ -15,6 +15,8 @@ public partial class PesquisaClientesView : UserControl
     public event EventHandler? PreviousPageRequested;
     public event EventHandler? NextPageRequested;
 
+    private bool _atualizandoEmpresas;
+
     public PesquisaClientesView()
     {
         InitializeComponent();
@@ -32,7 +34,22 @@ public partial class PesquisaClientesView : UserControl
 
     public void SetEmpresaOptions(IEnumerable<string> empresas)
     {
-        EmpresaComboBox.ItemsSource = empresas;
+        // Recarregar as opcoes (ex.: apos salvar um cliente) nao pode descartar
+        // o filtro que o usuario escolheu nem disparar uma pesquisa extra.
+        var lista = empresas as IList<string> ?? new List<string>(empresas);
+        var selecionada = SelectedEmpresaFilter;
+
+        _atualizandoEmpresas = true;
+        try
+        {
+            EmpresaComboBox.ItemsSource = lista;
+            if (!string.IsNullOrWhiteSpace(selecionada) && lista.Contains(selecionada))
+                EmpresaComboBox.SelectedItem = selecionada;
+        }
+        finally
+        {
+            _atualizandoEmpresas = false;
+        }
     }
 
     public void SetCount(int total, int visible, bool hasSearch)
@@ -75,6 +92,9 @@ public partial class PesquisaClientesView : UserControl
 
     private void Filter_Changed(object sender, EventArgs e)
     {
+        if (_atualizandoEmpresas)
+            return;
+
         FilterChanged?.Invoke(this, EventArgs.Empty);
     }
 

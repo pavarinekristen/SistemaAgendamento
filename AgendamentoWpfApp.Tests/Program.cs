@@ -183,7 +183,9 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     // Pesquisa paginada no banco (grade principal nao carrega mais tudo em memoria).
     Assert(await clienteWorkflow.CountAsync() == 2, "Contagem geral de clientes falhou.");
     Assert(await clienteWorkflow.CountAsync("duplicado") == 1, "Contagem filtrada por termo falhou.");
-    Assert(await clienteWorkflow.CountAsync("", "empresa teste") == 2, "Contagem filtrada por empresa falhou.");
+    Assert(await clienteWorkflow.CountAsync("", "Empresa Teste") == 2, "Contagem filtrada por empresa falhou.");
+    // O filtro de empresa e igualdade exata: o valor vem do dropdown (do banco).
+    Assert(await clienteWorkflow.CountAsync("", "empresa teste") == 0, "Filtro de empresa deveria ser igualdade exata.");
     Assert(await clienteWorkflow.CountAsync("duplicado", "Outra Empresa") == 0, "Filtro por empresa nao restringiu a contagem.");
 
     var pagina1 = await clienteWorkflow.SearchPageAsync("", "", skip: 0, take: 10);
@@ -195,6 +197,24 @@ static async Task RunWorkflowTestsAsync(string databasePath)
 
     var empresas = await clienteWorkflow.ListEmpresasAsync();
     Assert(empresas.Count == 1 && empresas[0] == "Empresa Teste", "Lista de empresas distintas falhou.");
+
+    // Busca normalizada: caixa e acentos nao importam; curingas sao literais.
+    var acentuado = new Cliente
+    {
+        Nome = "José Ângelo",
+        Empresa = "Empresa Teste",
+        Cargo = "Vigilante",
+        Status = "Ativo"
+    };
+    await clienteWorkflow.SaveAsync(acentuado);
+
+    Assert((await clienteWorkflow.SearchAsync("jose angelo")).Count == 1, "Busca sem acento nao encontrou nome acentuado.");
+    Assert((await clienteWorkflow.SearchAsync("JOSÉ")).Count == 1, "Busca acentuada em caixa alta falhou.");
+    Assert((await clienteWorkflow.SearchAsync("100%")).Count == 0, "Curinga % deveria ser tratado como texto literal.");
+    Assert((await clienteWorkflow.SearchAsync("C_IENTE")).Count == 0, "Curinga _ deveria ser tratado como texto literal.");
+
+    await clienteWorkflow.DeleteAsync(acentuado);
+    Assert(await clienteWorkflow.CountAsync() == 2, "Exclusao do cliente acentuado falhou.");
 
     var sala1 = new ProfissionalSala
     {

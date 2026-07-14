@@ -74,8 +74,11 @@ internal sealed class AutomaticAgendaSyncCoordinator : IDisposable
         try
         {
             StatusChanged?.Invoke($"Sincronizando automaticamente ({origem})...", false);
-            var result = await _syncService.SincronizarAsync();
+            // Zera a pendencia ANTES de montar o snapshot: um save feito durante
+            // o envio religa a flag e o proximo tick do timer sincroniza o resto.
+            // (Zerar depois apagava a pendencia dessas edicoes.)
             _pending = false;
+            var result = await _syncService.SincronizarAsync();
             var success = _statusStore.MarkSuccess(origem, result.TotalRegistros);
             StatusChanged?.Invoke(success.LastMessage, false);
         }

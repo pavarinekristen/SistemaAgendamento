@@ -227,8 +227,9 @@ public partial class DashboardWindow : Window
         var empresa = PesquisaClientesView.SelectedEmpresaFilter;
         var temFiltro = !string.IsNullOrWhiteSpace(termo) || !string.IsNullOrWhiteSpace(empresa);
 
-        if (resetPagina)
-            _clientesPaginaAtual = 0;
+        // Pagina alvo capturada no inicio: dois refreshes intercalados (clique
+        // rapido no paginador) ficam cada um autoconsistente; o ultimo vence.
+        var paginaAlvo = resetPagina ? 0 : Math.Max(0, _clientesPaginaAtual);
 
         _clientesTotalGeral = await _clienteWorkflow.CountAsync();
         _clientesTotalFiltrado = temFiltro
@@ -236,18 +237,19 @@ public partial class DashboardWindow : Window
             : _clientesTotalGeral;
 
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(_clientesTotalFiltrado / (double)ClientesPorPagina));
-        _clientesPaginaAtual = Math.Clamp(_clientesPaginaAtual, 0, totalPaginas - 1);
+        paginaAlvo = Math.Clamp(paginaAlvo, 0, totalPaginas - 1);
 
         var pagina = await _clienteWorkflow.SearchPageAsync(
             termo,
             empresa,
-            _clientesPaginaAtual * ClientesPorPagina,
+            paginaAlvo * ClientesPorPagina,
             ClientesPorPagina);
+        _clientesPaginaAtual = paginaAlvo;
         _clientes.Reset(pagina);
 
-        var exibindoDe = _clientesTotalFiltrado == 0 ? 0 : _clientesPaginaAtual * ClientesPorPagina + 1;
-        var exibindoAte = _clientesPaginaAtual * ClientesPorPagina + pagina.Count;
-        PesquisaClientesView.SetPageInfo(_clientesPaginaAtual + 1, totalPaginas, exibindoDe, exibindoAte, _clientesTotalFiltrado);
+        var exibindoDe = _clientesTotalFiltrado == 0 ? 0 : paginaAlvo * ClientesPorPagina + 1;
+        var exibindoAte = paginaAlvo * ClientesPorPagina + pagina.Count;
+        PesquisaClientesView.SetPageInfo(paginaAlvo + 1, totalPaginas, exibindoDe, exibindoAte, _clientesTotalFiltrado);
 
         UpdateSummary();
         UpdateSyncDetails();

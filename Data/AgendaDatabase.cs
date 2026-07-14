@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using AgendamentoWpfApp.Services.Validation;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace AgendamentoWpfApp.Data;
@@ -33,11 +35,50 @@ internal sealed class AgendaDatabase
         // "database is locked" quando o sync automatico roda junto com a tela.
         await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
         await EnsureConsultaLaudoColumnsAsync(context);
+        await EnsureClientePesquisaNormalizadaAsync(context);
         // Atende o ORDER BY Nome, Cpf da grade paginada de clientes sem B-tree
         // temporario sobre as ~48k linhas. Nao inclui Excluido: o EF gera
         // "WHERE NOT Excluido", que o planner do SQLite nao usa como igualdade.
         await context.Database.ExecuteSqlRawAsync(
             "CREATE INDEX IF NOT EXISTS IX_CLIENTES_Nome_Cpf ON CLIENTES (Nome, Cpf)");
+    }
+
+    private static async Task EnsureClientePesquisaNormalizadaAsync(AgendaDbContext context)
+    {
+        await context.Database.OpenConnectionAsync();
+
+        try
+        {
+            var columns = await GetTableColumnsAsync(context, "CLIENTES");
+            if (columns.Count == 0)
+                return;
+
+            if (!columns.Contains("PesquisaNormalizada"))
+                await context.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE CLIENTES ADD COLUMN PesquisaNormalizada TEXT NOT NULL DEFAULT ''");
+
+            // Backfill dos cadastros antigos com a MESMA normalizacao do C#
+            // (o SQLite nao sabe remover acentos); roda uma vez por linha vazia.
+            if (context.Database.GetDbConnection() is SqliteConnection conexao)
+            {
+                conexao.CreateFunction(
+                    "SPARK_NORMALIZAR_BUSCA",
+                    (string texto) => InputNormalizer.NormalizeSearchText(texto ?? string.Empty));
+
+                await context.Database.ExecuteSqlRawAsync(@"
+                    UPDATE CLIENTES
+                       SET PesquisaNormalizada = SPARK_NORMALIZAR_BUSCA(
+                           COALESCE(Nome,'') || char(10) || COALESCE(Empresa,'') || char(10) ||
+                           COALESCE(Cargo,'') || char(10) || COALESCE(Cpf,'') || char(10) ||
+                           COALESCE(Rg,'') || char(10) || COALESCE(Telefone,'') || char(10) ||
+                           COALESCE(Email,'') || char(10) || COALESCE(Status,''))
+                     WHERE PesquisaNormalizada = ''");
+            }
+        }
+        finally
+        {
+            await context.Database.CloseConnectionAsync();
+        }
     }
 
     private static async Task EnsureConsultaLaudoColumnsAsync(AgendaDbContext context)

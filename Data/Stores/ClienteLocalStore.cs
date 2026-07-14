@@ -70,18 +70,15 @@ internal sealed class ClienteLocalStore
 
     public async Task<List<string>> ListEmpresasAsync()
     {
+        // Valores exatos como estao no banco: o filtro de empresa compara por
+        // igualdade, entao cada variacao de caixa/acento aparece na lista.
         await using var context = _database.CreateContext();
-        var empresas = await context.Clientes.AsNoTracking()
+        return await context.Clientes.AsNoTracking()
             .Where(c => !c.Excluido && c.Empresa != null && c.Empresa != "")
             .Select(c => c.Empresa)
             .Distinct()
             .OrderBy(e => e)
             .ToListAsync();
-
-        // O Distinct do SQLite diferencia maiusculas; a lista final nao deve.
-        return empresas
-            .Distinct(System.StringComparer.OrdinalIgnoreCase)
-            .ToList();
     }
 
     private static IQueryable<Cliente> AplicarFiltros(AgendaDbContext context, string term, string empresa, bool incluirExcluidos)
@@ -94,28 +91,48 @@ internal sealed class ClienteLocalStore
         if (!incluirExcluidos)
             query = query.Where(c => !c.Excluido);
 
-        // LIKE sem curinga: igualdade sem diferenciar maiusculas/minusculas.
+        // Igualdade exata: o valor vem do proprio banco (dropdown de empresas),
+        // e LIKE trataria % e _ do nome da empresa como curinga.
         if (!string.IsNullOrWhiteSpace(empresa))
-            query = query.Where(c => EF.Functions.Like(c.Empresa, empresa));
+            query = query.Where(c => c.Empresa == empresa);
 
         if (!string.IsNullOrWhiteSpace(term))
         {
             // Termo numerico tambem busca pelo ID do cliente (ex.: "12" ou "0012").
             var buscaPorId = int.TryParse(term, out var idBusca) && idBusca > 0;
 
+            // Blob normalizado (caixa alta, sem acento) cobre nome, empresa,
+            // cargo, CPF, RG, telefone, e-mail e status; curingas escapados
+            // para "100%" ser literal.
+            var padrao = $"%{EscaparLike(InputNormalizer.NormalizeSearchText(term))}%";
             query = query.Where(c =>
                 (buscaPorId && c.Id == idBusca) ||
-                EF.Functions.Like(c.Nome, $"%{term}%") ||
-                EF.Functions.Like(c.Empresa, $"%{term}%") ||
-                EF.Functions.Like(c.Cargo, $"%{term}%") ||
-                EF.Functions.Like(c.Cpf, $"%{term}%") ||
-                EF.Functions.Like(c.Rg, $"%{term}%") ||
-                EF.Functions.Like(c.Telefone, $"%{term}%") ||
-                EF.Functions.Like(c.Email, $"%{term}%") ||
-                EF.Functions.Like(c.Status, $"%{term}%"));
+                EF.Functions.Like(c.PesquisaNormalizada, padrao, "\\"));
         }
 
         return query;
+    }
+
+    internal static string MontarPesquisaNormalizada(Cliente cliente)
+    {
+        return InputNormalizer.NormalizeSearchText(string.Join(
+            "\n",
+            cliente.Nome,
+            cliente.Empresa,
+            cliente.Cargo,
+            cliente.Cpf,
+            cliente.Rg,
+            cliente.Telefone,
+            cliente.Email,
+            cliente.Status));
+    }
+
+    private static string EscaparLike(string valor)
+    {
+        return (valor ?? string.Empty)
+            .Replace("\\", "\\\\")
+            .Replace("%", "\\%")
+            .Replace("_", "\\_");
     }
 
     public async Task<Cliente?> FindByIdLocalAsync(string idLocal, bool incluirExcluidos = false)
@@ -143,6 +160,7 @@ internal sealed class ClienteLocalStore
         if (!validation.IsValid)
             throw new System.InvalidOperationException(validation.Message);
 
+        cliente.PesquisaNormalizada = MontarPesquisaNormalizada(cliente);
         cliente.AtualizadoEm = System.DateTime.Now;
 
         if (cliente.Id == 0)
@@ -154,13 +172,6 @@ internal sealed class ClienteLocalStore
             context.Clientes.Update(cliente);
         }
 
-        await context.SaveChangesAsync();
-    }
-
-    public async Task SaveAllAsync(IEnumerable<Cliente> clientes)
-    {
-        await using var context = _database.CreateContext();
-        context.Clientes.UpdateRange(clientes);
         await context.SaveChangesAsync();
     }
 

@@ -76,6 +76,10 @@ internal sealed class Cliente
 
     public string Observacoes { get; set; } = string.Empty;
 
+    // Blob de pesquisa (caixa alta, sem acento) mantido pelo ClienteLocalStore
+    // ao salvar; a coluna e criada/backfillada em AgendaDatabase.MigrateAsync.
+    public string PesquisaNormalizada { get; set; } = string.Empty;
+
     public DateTime CriadoEm { get; set; } = DateTime.Now;
     public DateTime AtualizadoEm { get; set; } = DateTime.Now;
     public DateTime? SincronizadoEm { get; set; }

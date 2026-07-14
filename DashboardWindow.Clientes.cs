@@ -46,7 +46,8 @@ public partial class DashboardWindow
     {
         try
         {
-            _clientesPaginaAtual = Math.Max(0, _clientesPaginaAtual + delta);
+            // O clamp de limites e responsabilidade do RefreshClientesPageAsync.
+            _clientesPaginaAtual += delta;
             await RefreshClientesPageAsync(resetPagina: false);
         }
         catch (Exception ex)

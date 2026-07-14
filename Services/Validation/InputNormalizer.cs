@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AgendamentoWpfApp.Services.Validation;
@@ -75,6 +76,25 @@ internal static class InputNormalizer
             return $"({digits[..2]}) {digits[2..6]}-{digits[6..]}";
 
         return $"({digits[..2]}) {digits[2..7]}-{digits[7..]}";
+    }
+
+    // Base da pesquisa de clientes: caixa alta e sem acentos, para que "jose"
+    // encontre "José" independente de como o cadastro foi digitado (o LIKE do
+    // SQLite so ignora caixa ASCII e nao conhece acentos).
+    public static string NormalizeSearchText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var decomposto = value.Trim().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(decomposto.Length);
+        foreach (var ch in decomposto)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                builder.Append(char.ToUpperInvariant(ch));
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 
     public static bool TryNormalizeHorario(string value, out string horario)
