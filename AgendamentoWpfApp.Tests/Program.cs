@@ -11,6 +11,7 @@ try
 {
     RunValidatorTests();
     await RunWorkflowTestsAsync(databasePath);
+    await RunIncrementalSnapshotTestsAsync(Path.Combine(tempFolder, "agenda-sync-tests.sqlite"));
     RunLaudoPdfTests();
 
     Console.WriteLine("Testes unitarios concluidos com sucesso.");
@@ -69,16 +70,16 @@ static void RunLaudoPdfTests()
         TrabalhaArmado = true
     };
 
-    var semArmaPath = service.GerarLaudo(cliente, semArma);
-    var comArmaPath = service.GerarLaudo(cliente, comArma);
+    var semArmaResult = service.GerarLaudo(cliente, semArma);
+    var comArmaResult = service.GerarLaudo(cliente, comArma);
 
-    Assert(File.Exists(semArmaPath), "Laudo sem arma nao foi gerado.");
-    Assert(File.Exists(comArmaPath), "Laudo com arma nao foi gerado.");
-    Assert(Path.GetFileName(semArmaPath).Contains("SemArma"), "Nome do laudo sem arma nao indica o tipo.");
-    Assert(Path.GetFileName(comArmaPath).Contains("ComArma"), "Nome do laudo com arma nao indica o tipo.");
+    Assert(File.Exists(semArmaResult.Path), "Laudo sem arma nao foi gerado.");
+    Assert(File.Exists(comArmaResult.Path), "Laudo com arma nao foi gerado.");
+    Assert(semArmaResult.FileName.Contains("SemArma"), "Nome do laudo sem arma nao indica o tipo.");
+    Assert(comArmaResult.FileName.Contains("ComArma"), "Nome do laudo com arma nao indica o tipo.");
 
-    using var semArmaPdf = PdfReader.Open(semArmaPath, PdfDocumentOpenMode.ReadOnly);
-    using var comArmaPdf = PdfReader.Open(comArmaPath, PdfDocumentOpenMode.ReadOnly);
+    using var semArmaPdf = PdfReader.Open(semArmaResult.Path, PdfDocumentOpenMode.ReadOnly);
+    using var comArmaPdf = PdfReader.Open(comArmaResult.Path, PdfDocumentOpenMode.ReadOnly);
     Assert(semArmaPdf.PageCount == 1, "Laudo sem arma deve conter uma pagina.");
     Assert(comArmaPdf.PageCount == 1, "Laudo com arma deve conter uma pagina.");
 }
@@ -167,6 +168,18 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     clientes = await clienteWorkflow.LoadAsync();
     Assert(clientes.Count == 2, "CPF duplicado deve ser permitido para dados legados.");
 
+    // Novo cadastro deve receber ID sequencial do banco automaticamente.
+    Assert(cliente.Id > 0, "Novo cliente nao recebeu ID apos salvar.");
+    Assert(duplicado.Id == cliente.Id + 1, "IDs de novos clientes nao seguem a sequencia.");
+
+    // Busca por ID: filtro em memoria (Pesquisa) e consulta no banco (Agenda).
+    Assert(clienteWorkflow.MatchesSearch(cliente, cliente.Id.ToString()), "Filtro por ID falhou.");
+    Assert(clienteWorkflow.MatchesSearch(cliente, cliente.Id.ToString("0000")), "Filtro por ID com zeros a esquerda falhou.");
+    Assert(!clienteWorkflow.MatchesSearch(cliente, duplicado.Id.ToString("0000")), "Filtro por ID retornou cliente errado.");
+
+    var porId = await clienteWorkflow.SearchAsync(duplicado.Id.ToString("0000"));
+    Assert(porId.Count == 1 && porId[0].IdLocal == duplicado.IdLocal, "Busca por ID no banco falhou.");
+
     var sala1 = new ProfissionalSala
     {
         Nome = "Sala Workflow 1",
@@ -240,6 +253,82 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     await clienteWorkflow.DeleteAsync(salvo);
     clientes = await clienteWorkflow.LoadAsync();
     Assert(clientes.Count == 1, "Delete de cliente pelo workflow falhou.");
+}
+
+static async Task RunIncrementalSnapshotTestsAsync(string databasePath)
+{
+    using var workspace = new AgendaWorkspaceService(databasePath);
+    var clienteWorkflow = new ClienteWorkflowService(workspace);
+    await workspace.MigrateAsync();
+
+    var cliente = new Cliente
+    {
+        Nome = "Cliente Sync",
+        Empresa = "Empresa Sync",
+        Cargo = "Vigilante",
+        Cpf = "123.456.789-09",
+        Status = "Ativo"
+    };
+    await clienteWorkflow.SaveAsync(cliente);
+
+    var syncService = new AgendaSnapshotSyncService(databasePath);
+
+    var snapshot = await syncService.CriarSnapshotAsync(completo: false);
+    Assert(!snapshot.SnapshotCompleto, "Snapshot incremental marcado como completo.");
+    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 1, "Cliente pendente nao entrou no snapshot incremental.");
+
+    await syncService.MarcarRegistrosComoSincronizadosAsync(snapshot, DateTime.Now);
+
+    snapshot = await syncService.CriarSnapshotAsync(completo: false);
+    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 0, "Cliente ja sincronizado foi reenviado no snapshot incremental.");
+
+    snapshot = await syncService.CriarSnapshotAsync(completo: true);
+    Assert(snapshot.SnapshotCompleto, "Snapshot completo nao marcado como completo.");
+    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 1, "Snapshot completo deve enviar todos os registros.");
+
+    // Garante que o relogio avancou: AtualizadoEm precisa ficar maior que SincronizadoEm.
+    await Task.Delay(50);
+    cliente.Cargo = "Vigilante Lider";
+    await clienteWorkflow.SaveAsync(cliente);
+
+    snapshot = await syncService.CriarSnapshotAsync(completo: false);
+    Assert(RegistrosDaTabela(snapshot, "CLIENTES") == 1, "Cliente editado nao voltou a ficar pendente no snapshot incremental.");
+
+    RunLoteamentoTests();
+}
+
+static void RunLoteamentoTests()
+{
+    var snapshot = new AgendaSnapshotRequest { DispositivoId = "TESTE" };
+    var clientes = new AgendaSnapshotTable { Nome = "CLIENTES" };
+    for (var i = 0; i < 5; i++)
+        clientes.Registros.Add(new AgendaSnapshotRecord { IdLocal = $"c{i}", DadosJson = "{}", Hash = $"h{i}" });
+
+    var consultas = new AgendaSnapshotTable { Nome = "CONSULTAS" };
+    for (var i = 0; i < 3; i++)
+        consultas.Registros.Add(new AgendaSnapshotRecord { IdLocal = $"a{i}", DadosJson = "{}", Hash = $"h{i}" });
+
+    snapshot.Tabelas.Add(clientes);
+    snapshot.Tabelas.Add(consultas);
+
+    var lotes = AgendaSnapshotSyncService.DividirEmLotes(snapshot, maxRegistros: 2);
+    Assert(lotes.Count == 4, $"Esperados 4 lotes de ate 2 registros, obtidos {lotes.Count}.");
+
+    var totalRegistros = lotes.Sum(l => l.Tabelas.Sum(t => t.Registros.Count));
+    Assert(totalRegistros == 8, "Loteamento perdeu ou duplicou registros.");
+    Assert(lotes.All(l => l.Tabelas.Sum(t => t.Registros.Count) <= 2), "Lote excedeu o tamanho maximo.");
+    Assert(lotes.All(l => !l.SnapshotCompleto), "Lote parcial nao pode ser marcado como snapshot completo.");
+    Assert(lotes.All(l => l.DispositivoId == "TESTE"), "Lote perdeu o DispositivoId.");
+
+    // Snapshot vazio ainda gera um unico request (valida sessao e registra o dispositivo).
+    var vazio = AgendaSnapshotSyncService.DividirEmLotes(new AgendaSnapshotRequest { DispositivoId = "TESTE" }, maxRegistros: 2);
+    Assert(vazio.Count == 1 && vazio[0].Tabelas.Count == 0, "Snapshot vazio deveria gerar um unico lote vazio.");
+}
+
+static int RegistrosDaTabela(AgendaSnapshotRequest snapshot, string tabela)
+{
+    var encontrada = snapshot.Tabelas.FirstOrDefault(t => string.Equals(t.Nome, tabela, StringComparison.OrdinalIgnoreCase));
+    return encontrada?.Registros.Count ?? 0;
 }
 
 static void Assert(bool condition, string message)

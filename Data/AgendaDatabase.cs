@@ -29,6 +29,9 @@ internal sealed class AgendaDatabase
     {
         await using var context = CreateContext();
         await context.Database.MigrateAsync();
+        // WAL e persistente no arquivo: leitores nao bloqueiam o escritor, evitando
+        // "database is locked" quando o sync automatico roda junto com a tela.
+        await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
         await EnsureConsultaLaudoColumnsAsync(context);
     }
 

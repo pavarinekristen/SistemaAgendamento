@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -17,6 +18,11 @@ namespace AgendamentoWpfApp.Services;
 internal sealed class AgendaSnapshotSyncService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly HttpClient SharedHttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(60)
+    };
+
     private readonly AgendaDatabase _database;
 
     public AgendaSnapshotSyncService(string? databasePath = null)
@@ -24,40 +30,115 @@ internal sealed class AgendaSnapshotSyncService
         _database = new AgendaDatabase(databasePath);
     }
 
-    public async Task<AgendaSnapshotResponse> SincronizarAsync()
+    // Limite de registros por requisicao: mantem o payload em ~1-2 MB, abaixo do
+    // limite de body do servidor e do timeout, mesmo com dezenas de milhares pendentes.
+    internal const int MaxRegistrosPorLote = 1000;
+
+    public async Task<AgendaSnapshotResponse> SincronizarAsync(bool completo = false)
     {
         if (string.IsNullOrWhiteSpace(SessionState.BaseUrl) || string.IsNullOrWhiteSpace(SessionState.Token))
             throw new InvalidOperationException("Sessao da API nao esta ativa.");
 
         await _database.MigrateAsync();
-        var snapshot = await CriarSnapshotAsync();
 
-        using var httpClient = new HttpClient
+        // Registros alterados depois deste instante ficam para o proximo sync:
+        // a marcacao de sincronizado so alcanca AtualizadoEm <= inicioSnapshot.
+        var inicioSnapshot = DateTime.Now;
+        var snapshot = await CriarSnapshotAsync(completo);
+        var lotes = DividirEmLotes(snapshot, MaxRegistrosPorLote);
+
+        // "Ausentes = excluidos" so vale quando todas as linhas foram num unico
+        // request; dividido em lotes, cada lote e parcial por definicao.
+        if (completo && lotes.Count == 1)
+            lotes[0].SnapshotCompleto = true;
+
+        AgendaSnapshotResponse resultado = null!;
+        var totalEnviado = 0;
+
+        foreach (var lote in lotes)
         {
-            BaseAddress = new Uri(SessionState.BaseUrl.TrimEnd('/') + "/"),
-            Timeout = TimeSpan.FromSeconds(60)
-        };
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionState.Token);
+            resultado = await EnviarLoteAsync(lote);
+            totalEnviado += lote.Tabelas.Sum(t => t.Registros.Count);
 
-        var response = await httpClient.PostAsJsonAsync("sincroniza/agenda/snapshot", snapshot, JsonOptions);
+            // Marca por lote: se a conexao cair no meio, o que ja subiu nao e
+            // reenviado na proxima tentativa (o upsert do servidor e idempotente).
+            await MarcarRegistrosComoSincronizadosAsync(lote, inicioSnapshot);
+        }
+
+        resultado.TotalTabelas = snapshot.Tabelas.Count;
+        resultado.TotalRegistros = totalEnviado;
+        return resultado;
+    }
+
+    private static async Task<AgendaSnapshotResponse> EnviarLoteAsync(AgendaSnapshotRequest lote)
+    {
+        var baseUri = new Uri(SessionState.BaseUrl.TrimEnd('/') + "/");
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "sincroniza/agenda/snapshot"))
+        {
+            Content = JsonContent.Create(lote, options: JsonOptions)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", SessionState.Token);
+
+        using var response = await SharedHttpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Falha na sincronizacao: {(int)response.StatusCode} {body}");
         }
 
-        var result = await response.Content.ReadFromJsonAsync<AgendaSnapshotResponse>(JsonOptions)
+        return await response.Content.ReadFromJsonAsync<AgendaSnapshotResponse>(JsonOptions)
             ?? new AgendaSnapshotResponse();
-
-        await MarcarRegistrosComoSincronizadosAsync();
-        return result;
     }
 
-    private async Task<AgendaSnapshotRequest> CriarSnapshotAsync()
+    internal static List<AgendaSnapshotRequest> DividirEmLotes(AgendaSnapshotRequest snapshot, int maxRegistros)
+    {
+        var lotes = new List<AgendaSnapshotRequest>();
+        AgendaSnapshotRequest? atual = null;
+        var capacidade = 0;
+
+        foreach (var tabela in snapshot.Tabelas)
+        {
+            var offset = 0;
+            do
+            {
+                if (atual == null || capacidade <= 0)
+                {
+                    atual = new AgendaSnapshotRequest
+                    {
+                        DispositivoId = snapshot.DispositivoId,
+                        SnapshotCompleto = false
+                    };
+                    lotes.Add(atual);
+                    capacidade = maxRegistros;
+                }
+
+                var quantidade = Math.Min(capacidade, tabela.Registros.Count - offset);
+                atual.Tabelas.Add(new AgendaSnapshotTable
+                {
+                    Nome = tabela.Nome,
+                    Registros = tabela.Registros.GetRange(offset, quantidade)
+                });
+                offset += quantidade;
+                capacidade -= quantidade;
+            } while (offset < tabela.Registros.Count);
+        }
+
+        if (lotes.Count == 0)
+            lotes.Add(new AgendaSnapshotRequest
+            {
+                DispositivoId = snapshot.DispositivoId,
+                SnapshotCompleto = snapshot.SnapshotCompleto
+            });
+
+        return lotes;
+    }
+
+    internal async Task<AgendaSnapshotRequest> CriarSnapshotAsync(bool completo)
     {
         var snapshot = new AgendaSnapshotRequest
         {
-            DispositivoId = Environment.MachineName
+            DispositivoId = Environment.MachineName,
+            SnapshotCompleto = completo
         };
 
         await using var context = _database.CreateContext();
@@ -70,9 +151,17 @@ internal sealed class AgendaSnapshotSyncService
         {
             foreach (var tableName in ListarTabelasSqlite(connection))
             {
+                var colunas = await ListarColunasSqliteAsync(connection, tableName);
+                var incremental = !completo
+                    && colunas.Contains("AtualizadoEm")
+                    && colunas.Contains("SincronizadoEm");
+
                 var tabela = new AgendaSnapshotTable { Nome = tableName };
                 await using var command = connection.CreateCommand();
-                command.CommandText = $"SELECT * FROM \"{EscaparIdentificadorSqlite(tableName)}\"";
+                var nomeEscapado = EscaparIdentificadorSqlite(tableName);
+                command.CommandText = incremental
+                    ? $"SELECT * FROM \"{nomeEscapado}\" WHERE \"SincronizadoEm\" IS NULL OR \"AtualizadoEm\" > \"SincronizadoEm\""
+                    : $"SELECT * FROM \"{nomeEscapado}\"";
                 await using var reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
@@ -102,24 +191,33 @@ internal sealed class AgendaSnapshotSyncService
         return snapshot;
     }
 
-    private async Task MarcarRegistrosComoSincronizadosAsync()
+    internal async Task MarcarRegistrosComoSincronizadosAsync(AgendaSnapshotRequest lote, DateTime inicioSnapshot)
     {
         await using var context = _database.CreateContext();
         var agora = DateTime.Now;
 
-        var clientes = await context.Clientes.ToListAsync();
-        foreach (var cliente in clientes)
-            cliente.SincronizadoEm = agora;
+        foreach (var tabela in lote.Tabelas)
+        {
+            if (tabela.Registros.Count == 0)
+                continue;
 
-        var consultas = await context.Consultas.ToListAsync();
-        foreach (var consulta in consultas)
-            consulta.SincronizadoEm = agora;
+            var ids = tabela.Registros.Select(r => r.IdLocal).ToList();
 
-        var profissionaisSalas = await context.ProfissionaisSalas.ToListAsync();
-        foreach (var profissionalSala in profissionaisSalas)
-            profissionalSala.SincronizadoEm = agora;
-
-        await context.SaveChangesAsync();
+            // Marca apenas o que foi enviado neste lote e nao mudou desde a montagem
+            // do snapshot; edicao durante o envio (AtualizadoEm > inicio) segue pendente.
+            if (tabela.Nome.Equals("CLIENTES", StringComparison.OrdinalIgnoreCase))
+                await context.Clientes
+                    .Where(c => ids.Contains(c.IdLocal) && c.AtualizadoEm <= inicioSnapshot)
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.SincronizadoEm, agora));
+            else if (tabela.Nome.Equals("CONSULTAS", StringComparison.OrdinalIgnoreCase))
+                await context.Consultas
+                    .Where(c => ids.Contains(c.IdLocal) && c.AtualizadoEm <= inicioSnapshot)
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.SincronizadoEm, agora));
+            else if (tabela.Nome.Equals("PROFISSIONAIS_SALAS", StringComparison.OrdinalIgnoreCase))
+                await context.ProfissionaisSalas
+                    .Where(p => ids.Contains(p.IdLocal) && p.AtualizadoEm <= inicioSnapshot)
+                    .ExecuteUpdateAsync(s => s.SetProperty(p => p.SincronizadoEm, agora));
+        }
     }
 
     private static IReadOnlyList<string> ListarTabelasSqlite(System.Data.Common.DbConnection connection)
@@ -143,6 +241,19 @@ internal sealed class AgendaSnapshotSyncService
         }
 
         return tabelas;
+    }
+
+    private static async Task<HashSet<string>> ListarColunasSqliteAsync(System.Data.Common.DbConnection connection, string tableName)
+    {
+        var colunas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info(\"{EscaparIdentificadorSqlite(tableName)}\")";
+
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            colunas.Add(reader.GetString(1));
+
+        return colunas;
     }
 
     private static string ObterIdLocal(Dictionary<string, object?> registro, string dadosJson)
@@ -172,6 +283,9 @@ internal sealed class AgendaSnapshotRequest
 {
     [JsonPropertyName("dispositivoId")]
     public string DispositivoId { get; set; } = string.Empty;
+
+    [JsonPropertyName("snapshotCompleto")]
+    public bool SnapshotCompleto { get; set; }
 
     [JsonPropertyName("tabelas")]
     public List<AgendaSnapshotTable> Tabelas { get; set; } = new();

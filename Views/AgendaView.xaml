@@ -169,7 +169,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
-                            <Label Content="Cliente cadastrado" />
+                            <Label Content="Cliente cadastrado (nome, CPF ou ID)" />
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />

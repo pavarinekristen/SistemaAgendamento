@@ -49,6 +49,12 @@ internal sealed class ClienteWorkflowService
         if (string.IsNullOrWhiteSpace(term))
             return true;
 
+        term = term.Trim();
+
+        // Termo numerico tambem encontra pelo ID (ex.: "12" ou "0012").
+        if (int.TryParse(term, out var idBusca) && idBusca > 0 && cliente.Id == idBusca)
+            return true;
+
         return Contains(cliente.Nome, term)
             || Contains(cliente.Empresa, term)
             || Contains(cliente.Cargo, term)

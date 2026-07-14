@@ -49,7 +49,11 @@ internal sealed class ClienteLocalStore
 
         if (!string.IsNullOrWhiteSpace(term))
         {
+            // Termo numerico tambem busca pelo ID do cliente (ex.: "12" ou "0012").
+            var buscaPorId = int.TryParse(term, out var idBusca) && idBusca > 0;
+
             query = query.Where(c =>
+                (buscaPorId && c.Id == idBusca) ||
                 EF.Functions.Like(c.Nome, $"%{term}%") ||
                 EF.Functions.Like(c.Empresa, $"%{term}%") ||
                 EF.Functions.Like(c.Cargo, $"%{term}%") ||
@@ -88,6 +92,8 @@ internal sealed class ClienteLocalStore
         var validation = ClienteValidator.Validate(cliente);
         if (!validation.IsValid)
             throw new System.InvalidOperationException(validation.Message);
+
+        cliente.AtualizadoEm = System.DateTime.Now;
 
         if (cliente.Id == 0)
         {
