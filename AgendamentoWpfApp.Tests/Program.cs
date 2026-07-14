@@ -339,6 +339,12 @@ static void RunLoteamentoTests()
     // Snapshot vazio ainda gera um unico request (valida sessao e registra o dispositivo).
     var vazio = AgendaSnapshotSyncService.DividirEmLotes(new AgendaSnapshotRequest { DispositivoId = "TESTE" }, maxRegistros: 2);
     Assert(vazio.Count == 1 && vazio[0].Tabelas.Count == 0, "Snapshot vazio deveria gerar um unico lote vazio.");
+
+    // Nenhum request na rede pode afirmar "snapshot completo": autorizaria o
+    // servidor a marcar como excluido tudo que nao veio naquele request.
+    var vazioCompleto = AgendaSnapshotSyncService.DividirEmLotes(
+        new AgendaSnapshotRequest { DispositivoId = "TESTE", SnapshotCompleto = true }, maxRegistros: 2);
+    Assert(!vazioCompleto[0].SnapshotCompleto, "Request vazio nao pode ser marcado como snapshot completo.");
 }
 
 static int RegistrosDaTabela(AgendaSnapshotRequest snapshot, string tabela)

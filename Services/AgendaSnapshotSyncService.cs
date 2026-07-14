@@ -47,10 +47,10 @@ internal sealed class AgendaSnapshotSyncService
         var snapshot = await CriarSnapshotAsync(completo);
         var lotes = DividirEmLotes(snapshot, MaxRegistrosPorLote);
 
-        // "Ausentes = excluidos" so vale quando todas as linhas foram num unico
-        // request; dividido em lotes, cada lote e parcial por definicao.
-        if (completo && lotes.Count == 1)
-            lotes[0].SnapshotCompleto = true;
+        // Nenhum lote afirma "snapshot completo": dividido em lotes, cada request
+        // e parcial por definicao, e a regra "ausentes = excluidos" do servidor
+        // marcaria como excluido tudo que ficou nos outros lotes. Exclusoes
+        // chegam ao servidor pelo proprio payload (campo Excluido do registro).
 
         AgendaSnapshotResponse resultado = null!;
         var totalEnviado = 0;
@@ -123,11 +123,14 @@ internal sealed class AgendaSnapshotSyncService
             } while (offset < tabela.Registros.Count);
         }
 
+        // Snapshot vazio ainda gera um request (valida sessao e registra o
+        // dispositivo), mas nunca como "completo": um request completo vazio
+        // autorizaria o servidor a marcar tudo do dispositivo como excluido.
         if (lotes.Count == 0)
             lotes.Add(new AgendaSnapshotRequest
             {
                 DispositivoId = snapshot.DispositivoId,
-                SnapshotCompleto = snapshot.SnapshotCompleto
+                SnapshotCompleto = false
             });
 
         return lotes;
