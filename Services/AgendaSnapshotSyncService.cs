@@ -35,6 +35,14 @@ internal sealed class AgendaSnapshotSyncService
     // limite de body do servidor e do timeout, mesmo com dezenas de milhares pendentes.
     internal const int MaxRegistrosPorLote = 1000;
 
+    // Colunas de uso exclusivamente local que nao viajam no snapshot: dado
+    // derivavel que o servidor nao consulta e que duplicaria dado pessoal
+    // (nome+CPF+RG+telefone+email) em coluna espuria no Postgres.
+    private static readonly HashSet<string> ColunasApenasLocais = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "PesquisaNormalizada"
+    };
+
     public async Task<AgendaSnapshotResponse> SincronizarAsync(bool completo = false)
     {
         if (string.IsNullOrWhiteSpace(SessionState.BaseUrl) || string.IsNullOrWhiteSpace(SessionState.Token))
@@ -133,7 +141,13 @@ internal sealed class AgendaSnapshotSyncService
                 {
                     var registro = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
                     for (var i = 0; i < reader.FieldCount; i++)
-                        registro[reader.GetName(i)] = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
+                    {
+                        var nomeColuna = reader.GetName(i);
+                        if (ColunasApenasLocais.Contains(nomeColuna))
+                            continue;
+
+                        registro[nomeColuna] = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
+                    }
 
                     var dadosJson = JsonSerializer.Serialize(registro, JsonOptions);
 

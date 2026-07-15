@@ -314,6 +314,20 @@ static async Task RunIncrementalSnapshotTestsAsync(string databasePath)
     Assert(lotes.All(l => !l.SnapshotCompleto), "Nenhum lote pode afirmar snapshot completo.");
     Assert(RegistrosDaTabela(lotes, "CLIENTES") == 1, "Cliente pendente nao entrou no snapshot incremental.");
 
+    // O blob local de pesquisa e derivavel e duplicaria dado pessoal no
+    // Postgres; a coluna existe no SQLite mas nunca viaja no snapshot.
+    var dadosClientes = lotes
+        .SelectMany(l => l.Tabelas)
+        .Where(t => string.Equals(t.Nome, "CLIENTES", StringComparison.OrdinalIgnoreCase))
+        .SelectMany(t => t.Registros)
+        .Select(r => r.DadosJson)
+        .ToList();
+    Assert(dadosClientes.Count == 1, "Payload do cliente pendente nao foi localizado.");
+    Assert(dadosClientes.All(d => !d.Contains("PesquisaNormalizada", StringComparison.OrdinalIgnoreCase)),
+        "PesquisaNormalizada nao pode viajar no payload do snapshot.");
+    Assert(dadosClientes.All(d => d.Contains("Cliente Sync", StringComparison.Ordinal)),
+        "Filtro de colunas locais removeu dados legitimos do payload.");
+
     foreach (var lote in lotes)
         await syncService.MarcarRegistrosComoSincronizadosAsync(lote, DateTime.Now);
 
