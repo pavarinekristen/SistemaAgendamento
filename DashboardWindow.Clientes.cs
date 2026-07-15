@@ -80,27 +80,41 @@ public partial class DashboardWindow
 
     private async Task SaveClientAsync()
     {
-        var cliente = ClientesView.BuildFromForm(_selectedCliente);
+        if (_isSavingCliente)
+            return;
 
-        if (_selectedCliente == null)
-            _selectedCliente = cliente;
+        _isSavingCliente = true;
+        ClientesView.SetSaving(true);
 
         try
         {
-            await _clienteWorkflow.SaveAsync(cliente);
-        }
-        catch (InvalidOperationException ex)
-        {
-            SetFormStatus(ex.Message, true);
-            ClientesView.FocusNome();
-            return;
-        }
+            var cliente = ClientesView.BuildFromForm(_selectedCliente);
 
-        await LoadClientesAsync();
-        // O cliente salvo pode nao estar na pagina atual; selecionar so quando visivel.
-        PesquisaClientesView.SelectItem(_clientes.FirstOrDefault(c => c.IdLocal == cliente.IdLocal));
-        UpdateDetails(cliente);
-        SetFormStatus("Cliente salvo. Ele ja pode ser agendado na aba Agenda.", false);
+            if (_selectedCliente == null)
+                _selectedCliente = cliente;
+
+            try
+            {
+                await _clienteWorkflow.SaveAsync(cliente);
+            }
+            catch (InvalidOperationException ex)
+            {
+                SetFormStatus(ex.Message, true);
+                ClientesView.FocusNome();
+                return;
+            }
+
+            await LoadClientesAsync();
+            // O cliente salvo pode nao estar na pagina atual; selecionar so quando visivel.
+            PesquisaClientesView.SelectItem(_clientes.FirstOrDefault(c => c.IdLocal == cliente.IdLocal));
+            UpdateDetails(cliente);
+            SetFormStatus("Cliente salvo. Ele ja pode ser agendado na aba Agenda.", false);
+        }
+        finally
+        {
+            _isSavingCliente = false;
+            ClientesView.SetSaving(false);
+        }
     }
 
     private void ClientesView_NewRequested(object? sender, EventArgs e)

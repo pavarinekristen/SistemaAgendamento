@@ -76,6 +76,11 @@ public partial class ClientesView : UserControl
         _viewModel.SetStatus(message, isError);
     }
 
+    internal void SetSaving(bool saving)
+    {
+        _viewModel.SetSaving(saving);
+    }
+
     public void FocusNome()
     {
         NomeTextBox.Focus();

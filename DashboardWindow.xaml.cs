@@ -46,6 +46,9 @@ public partial class DashboardWindow : Window
     private DispatcherTimer? _notificationTimer;
     private bool _isSidebarCollapsed = true;
     private Cliente? _selectedCliente;
+    // Guard de reentrancia do save: um segundo clique antes do primeiro
+    // SaveChangesAsync concluir gravaria duas linhas com o mesmo IdLocal.
+    private bool _isSavingCliente;
     private Consulta? _selectedConsulta;
     private ProfissionalSala? _selectedProfissionalSala;
     private bool _loadingConsultaForm;

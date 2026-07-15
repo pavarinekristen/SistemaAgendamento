@@ -12,6 +12,8 @@ internal sealed class ClientesViewModel : ViewModelBase
 {
     private readonly Action _searchChanged;
     private readonly Action _selectionChanged;
+    private readonly RelayCommand _saveCommand;
+    private bool _isSaving;
     private IEnumerable? _items;
     private Cliente? _selectedItem;
     private IEnumerable? _empresaOptions;
@@ -52,7 +54,8 @@ internal sealed class ClientesViewModel : ViewModelBase
     {
         _searchChanged = searchChanged;
         _selectionChanged = selectionChanged;
-        SaveCommand = new RelayCommand(saveRequested);
+        _saveCommand = new RelayCommand(saveRequested, () => !_isSaving);
+        SaveCommand = _saveCommand;
         NewCommand = new RelayCommand(newRequested);
         DeleteCommand = new RelayCommand(deleteRequested);
     }
@@ -365,6 +368,12 @@ internal sealed class ClientesViewModel : ViewModelBase
         DetailContact = $"ID: {cliente.IdTexto} | CPF: {ValueOrDash(cliente.CpfFormatado)} | RG: {ValueOrDash(cliente.Rg)} | Tel: {ValueOrDash(cliente.TelefoneFormatado)}";
         DetailAddress = $"Empresa: {ValueOrDash(cliente.Empresa)} | Cargo: {ValueOrDash(cliente.Cargo)} | Endereco {ValueOrDash(cliente.TipoEndereco)}: {ValueOrDash(cliente.Endereco)} {ValueOrDash(cliente.Bairro)} {ValueOrDash(cliente.Cidade)}".Trim();
         DetailNotes = $"Status: {cliente.Status}. Sexo: {ValueOrDash(cliente.Sexo)}. Escolaridade: {ValueOrDash(cliente.Escolaridade)}. {cliente.Observacoes}";
+    }
+
+    public void SetSaving(bool saving)
+    {
+        _isSaving = saving;
+        _saveCommand.RaiseCanExecuteChanged();
     }
 
     public void SetStatus(string message, bool isError)
