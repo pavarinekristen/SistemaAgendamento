@@ -26,6 +26,8 @@ try
     var cliente = new Cliente
     {
         Nome = "Cliente Smoke",
+        Empresa = "Empresa Smoke",
+        Cargo = "Vigilante",
         Cpf = "123.456.789-09",
         Email = "cliente.smoke@example.com",
         Telefone = "(11) 99999-9999",
@@ -49,24 +51,18 @@ try
     Assert(salvo.Telefone == "11999999999", "Telefone nao foi normalizado.");
     Assert(salvo.Email == "cliente.smoke@example.com", "E-mail nao foi persistido.");
 
+    // CPF duplicado e permitido: a base legada importada tem repeticoes
+    // (mesma regra coberta pela suite de testes do workflow).
     var duplicado = new Cliente
     {
         Nome = "Cliente Mesmo CPF",
+        Empresa = "Empresa Smoke",
+        Cargo = "Vigilante",
         Cpf = "12345678909",
         Status = "Ativo"
     };
-
-    var bloqueouCpfDuplicado = false;
-    try
-    {
-        await store.SaveAsync(duplicado);
-    }
-    catch (InvalidOperationException)
-    {
-        bloqueouCpfDuplicado = true;
-    }
-
-    Assert(bloqueouCpfDuplicado, "CPF duplicado nao foi bloqueado.");
+    await store.SaveAsync(duplicado);
+    Assert((await store.LoadAsync()).Count == 2, "CPF duplicado deveria ser permitido para dados legados.");
 
     var sala1 = new ProfissionalSala
     {
@@ -151,16 +147,16 @@ try
     salvo.Status = "Concluido";
     await store.SaveAsync(salvo);
 
-    var recarregados = await store.LoadAsync();
-    Assert(recarregados[0].Telefone == "11888887777", "Atualizacao de telefone nao foi persistida.");
-    Assert(recarregados[0].Status == "Concluido", "Atualizacao de status nao foi persistida.");
+    var recarregado = (await store.LoadAsync()).Single(c => c.IdLocal == salvo.IdLocal);
+    Assert(recarregado.Telefone == "11888887777", "Atualizacao de telefone nao foi persistida.");
+    Assert(recarregado.Status == "Concluido", "Atualizacao de status nao foi persistida.");
 
-    await store.MarkDeletedAsync(recarregados[0]);
+    await store.MarkDeletedAsync(recarregado);
     var ativos = await store.LoadAsync();
-    Assert(ativos.Count == 0, "Exclusao logica nao removeu cliente da listagem ativa.");
+    Assert(ativos.Count == 1 && ativos[0].IdLocal == duplicado.IdLocal, "Exclusao logica nao removeu cliente da listagem ativa.");
 
     var todos = await store.LoadAsync(incluirExcluidos: true);
-    Assert(todos.Count == 1 && todos[0].Excluido, "Exclusao logica nao foi persistida.");
+    Assert(todos.Count == 2 && todos.Single(c => c.IdLocal == salvo.IdLocal).Excluido, "Exclusao logica nao foi persistida.");
 
     await consultaStore.MarkDeletedAsync(consultasDoDia[0]);
     var consultasAtivas = await consultaStore.LoadByDateAsync(new DateTime(2026, 7, 10));

@@ -59,11 +59,16 @@ internal sealed class AgendaDatabase
 
             // Backfill dos cadastros antigos com a MESMA normalizacao do C#
             // (o SQLite nao sabe remover acentos); roda uma vez por linha vazia.
+            // Espelhado em ClienteLocalStore.MontarPesquisaNormalizada: mesmas
+            // colunas, mesma ordem, mesmas variantes so-digitos.
             if (context.Database.GetDbConnection() is SqliteConnection conexao)
             {
                 conexao.CreateFunction(
                     "SPARK_NORMALIZAR_BUSCA",
                     (string texto) => InputNormalizer.NormalizeSearchText(texto ?? string.Empty));
+                conexao.CreateFunction(
+                    "SPARK_SOMENTE_DIGITOS",
+                    (string texto) => InputNormalizer.OnlyDigits(texto ?? string.Empty));
 
                 await context.Database.ExecuteSqlRawAsync(@"
                     UPDATE CLIENTES
@@ -71,7 +76,10 @@ internal sealed class AgendaDatabase
                            COALESCE(Nome,'') || char(10) || COALESCE(Empresa,'') || char(10) ||
                            COALESCE(Cargo,'') || char(10) || COALESCE(Cpf,'') || char(10) ||
                            COALESCE(Rg,'') || char(10) || COALESCE(Telefone,'') || char(10) ||
-                           COALESCE(Email,'') || char(10) || COALESCE(Status,''))
+                           COALESCE(Email,'') || char(10) || COALESCE(Status,'') || char(10) ||
+                           SPARK_SOMENTE_DIGITOS(COALESCE(Cpf,'')) || char(10) ||
+                           SPARK_SOMENTE_DIGITOS(COALESCE(Rg,'')) || char(10) ||
+                           SPARK_SOMENTE_DIGITOS(COALESCE(Telefone,'')))
                      WHERE PesquisaNormalizada = ''");
             }
         }

@@ -29,7 +29,9 @@ public partial class ClientesView : UserControl
 
     internal Cliente? SelectedCliente => _viewModel.SelectedItem;
     internal string SearchTerm => _viewModel.SearchTerm.Trim();
-    internal string SelectedEmpresaFilter => _viewModel.SelectedEmpresaFilter.Trim();
+    // Sem Trim: o filtro de empresa compara por igualdade com o valor cru do
+    // banco, e o proprio dropdown so oferece valores que vieram de la.
+    internal string SelectedEmpresaFilter => _viewModel.SelectedEmpresaFilter;
 
     internal Cliente BuildFromForm(Cliente? current)
     {

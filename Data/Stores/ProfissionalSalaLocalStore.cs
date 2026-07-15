@@ -58,10 +58,8 @@ internal sealed class ProfissionalSalaLocalStore
         await context.SaveChangesAsync();
     }
 
-    public async Task MarkDeletedAsync(ProfissionalSala profissionalSala)
+    public Task MarkDeletedAsync(ProfissionalSala profissionalSala)
     {
-        profissionalSala.Excluido = true;
-        profissionalSala.AtualizadoEm = DateTime.Now;
-        await SaveAsync(profissionalSala);
+        return ExclusaoLocalStore.MarcarExcluidoAsync(_database, profissionalSala);
     }
 }

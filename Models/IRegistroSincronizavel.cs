@@ -10,4 +10,5 @@ internal interface IRegistroSincronizavel
     string IdLocal { get; set; }
     DateTime AtualizadoEm { get; set; }
     DateTime? SincronizadoEm { get; set; }
+    bool Excluido { get; set; }
 }

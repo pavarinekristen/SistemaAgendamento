@@ -1,7 +1,9 @@
+using AgendamentoWpfApp.Data;
 using AgendamentoWpfApp.Models;
 using AgendamentoWpfApp.Services;
 using AgendamentoWpfApp.Services.Validation;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using PdfSharpCore.Pdf.IO;
 
 var tempFolder = Path.Combine(Path.GetTempPath(), "SparkCoreUnitTests", Guid.NewGuid().ToString("N"));
@@ -186,6 +188,7 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     Assert(await clienteWorkflow.CountAsync("", "Empresa Teste") == 2, "Contagem filtrada por empresa falhou.");
     // O filtro de empresa e igualdade exata: o valor vem do dropdown (do banco).
     Assert(await clienteWorkflow.CountAsync("", "empresa teste") == 0, "Filtro de empresa deveria ser igualdade exata.");
+    Assert(await clienteWorkflow.CountAsync("", " Empresa Teste ") == 0, "Filtro de empresa nao deve trimar: igualdade com o valor cru do banco.");
     Assert(await clienteWorkflow.CountAsync("duplicado", "Outra Empresa") == 0, "Filtro por empresa nao restringiu a contagem.");
 
     var pagina1 = await clienteWorkflow.SearchPageAsync("", "", skip: 0, take: 10);
@@ -289,6 +292,41 @@ static async Task RunWorkflowTestsAsync(string databasePath)
     await clienteWorkflow.DeleteAsync(salvo);
     clientes = await clienteWorkflow.LoadAsync();
     Assert(clientes.Count == 1, "Delete de cliente pelo workflow falhou.");
+
+    // Variante so-digitos do blob: cadastro legado guarda CPF/telefone
+    // formatados e a busca digitando apenas numeros tambem precisa achar.
+    // Simula o legado gravando formatado direto no banco e zerando o blob
+    // para o backfill do MigrateAsync reprocessar a linha.
+    var legadoFormatado = new Cliente
+    {
+        Nome = "Cliente Legado Formatado",
+        Empresa = "Empresa Teste",
+        Cargo = "Vigilante",
+        Cpf = "529.982.247-25",
+        Telefone = "(11) 98888-7777",
+        Status = "Ativo"
+    };
+    await clienteWorkflow.SaveAsync(legadoFormatado);
+
+    var database = new AgendaDatabase(databasePath);
+    await using (var context = database.CreateContext())
+    {
+        await context.Database.ExecuteSqlRawAsync(
+            "UPDATE CLIENTES SET Cpf = '529.982.247-25', Telefone = '(11) 98888-7777', PesquisaNormalizada = '' WHERE IdLocal = {0}",
+            legadoFormatado.IdLocal);
+    }
+    await workspace.MigrateAsync();
+
+    Assert((await clienteWorkflow.SearchAsync("52998224725")).Count == 1, "Busca so-digitos nao encontrou CPF legado formatado.");
+    Assert((await clienteWorkflow.SearchAsync("529.982.247-25")).Count == 1, "Busca formatada nao encontrou CPF legado formatado.");
+    Assert((await clienteWorkflow.SearchAsync("11988887777")).Count == 1, "Busca so-digitos nao encontrou telefone legado formatado.");
+
+    // Exclusao nao valida nem normaliza o cadastro: registro legado invalido
+    // pelas regras atuais tambem precisa poder ser excluido.
+    legadoFormatado.Nome = "";
+    legadoFormatado.Cpf = "11111111111";
+    await clienteWorkflow.DeleteAsync(legadoFormatado);
+    Assert(await clienteWorkflow.CountAsync() == 1, "Cliente legado invalido deveria poder ser excluido.");
 }
 
 static async Task RunIncrementalSnapshotTestsAsync(string databasePath)

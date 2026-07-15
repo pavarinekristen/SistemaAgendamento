@@ -84,7 +84,9 @@ internal sealed class ClienteLocalStore
     private static IQueryable<Cliente> AplicarFiltros(AgendaDbContext context, string term, string empresa, bool incluirExcluidos)
     {
         term = (term ?? string.Empty).Trim();
-        empresa = (empresa ?? string.Empty).Trim();
+        // Empresa NAO trima: o valor vem do dropdown (direto do banco) e a
+        // comparacao e por igualdade com o valor cru armazenado.
+        empresa = empresa ?? string.Empty;
 
         var query = context.Clientes.AsNoTracking();
 
@@ -113,6 +115,10 @@ internal sealed class ClienteLocalStore
         return query;
     }
 
+    // Espelhado no backfill SQL de AgendaDatabase.EnsureClientePesquisaNormalizadaAsync;
+    // quem alterar aqui precisa alterar la. A variante so-digitos cobre cadastro
+    // legado com CPF/RG/telefone formatados ("123.456.789-01") quando o usuario
+    // digita apenas os numeros.
     internal static string MontarPesquisaNormalizada(Cliente cliente)
     {
         return InputNormalizer.NormalizeSearchText(string.Join(
@@ -124,7 +130,10 @@ internal sealed class ClienteLocalStore
             cliente.Rg,
             cliente.Telefone,
             cliente.Email,
-            cliente.Status));
+            cliente.Status,
+            InputNormalizer.OnlyDigits(cliente.Cpf),
+            InputNormalizer.OnlyDigits(cliente.Rg),
+            InputNormalizer.OnlyDigits(cliente.Telefone)));
     }
 
     private static string EscaparLike(string valor)
@@ -175,9 +184,8 @@ internal sealed class ClienteLocalStore
         await context.SaveChangesAsync();
     }
 
-    public async Task MarkDeletedAsync(Cliente cliente)
+    public Task MarkDeletedAsync(Cliente cliente)
     {
-        cliente.Excluido = true;
-        await SaveAsync(cliente);
+        return ExclusaoLocalStore.MarcarExcluidoAsync(_database, cliente);
     }
 }

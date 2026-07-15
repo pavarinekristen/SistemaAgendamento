@@ -62,6 +62,11 @@ internal sealed class AgendaSnapshotSyncService
         // fica em memoria (na primeira carga sao ~48k registros). Marca por
         // lote: se a conexao cair no meio, o que ja subiu nao e reenviado na
         // proxima tentativa (o upsert do servidor e idempotente).
+        // Trade-off conhecido: o reader do SQLite fica aberto entre lotes,
+        // atravessando o POST + marcacao de cada um. Em WAL nada bloqueia,
+        // mas a leitura longa adia o checkpoint e incha o -wal durante o
+        // primeiro sync (~49 lotes); servidor lento estica a janela. Aceito
+        // em troca de nao materializar o snapshot em memoria.
         await foreach (var lote in CriarLotesAsync(completo, MaxRegistrosPorLote))
         {
             resultado = await EnviarLoteAsync(lote);
@@ -75,6 +80,8 @@ internal sealed class AgendaSnapshotSyncService
             await MarcarRegistrosComoSincronizadosAsync(lote, inicioSnapshot);
         }
 
+        // Semantica deliberada: conta apenas tabelas COM pendencias enviadas
+        // neste sync (antes do incremental contava todas as do snapshot).
         resultado.TotalTabelas = tabelasEnviadas.Count;
         resultado.TotalRegistros = totalEnviado;
         return resultado;

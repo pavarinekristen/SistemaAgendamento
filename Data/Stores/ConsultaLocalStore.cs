@@ -149,10 +149,10 @@ internal sealed class ConsultaLocalStore
         await context.SaveChangesAsync();
     }
 
-    public async Task MarkDeletedAsync(Consulta consulta)
+    public Task MarkDeletedAsync(Consulta consulta)
     {
-        consulta.Excluido = true;
-        consulta.AtualizadoEm = DateTime.Now;
-        await SaveAsync(consulta);
+        // Nao delega ao SaveAsync: alem da validacao, a checagem de conflito
+        // de horario impediria excluir uma consulta em slot disputado.
+        return ExclusaoLocalStore.MarcarExcluidoAsync(_database, consulta);
     }
 }
